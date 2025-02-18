@@ -218,9 +218,11 @@ class TaskListener(TaskConfig):
             self.clear()
 
         if self.merge:
+            output_name = self.merge
             up_path = await self.proceed_merge(
                 up_path,
-                gid
+                gid,
+                output_name
             )
             if self.is_cancelled:
                 return
