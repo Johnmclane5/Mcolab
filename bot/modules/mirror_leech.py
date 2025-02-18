@@ -89,7 +89,7 @@ class Mirror(TaskListener):
             "-hl": False,
             "-bt": False,
             "-ut": False,
-            "mv": False,
+            "-mv": False,
             "-i": 0,
             "-sp": 0,
             "link": "",
