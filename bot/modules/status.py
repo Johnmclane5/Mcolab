@@ -8,11 +8,9 @@ from .. import (
     task_dict,
     bot_start_time,
     intervals,
-    sabnzbd_client,
     DOWNLOAD_DIR,
 )
 from ..core.torrent_manager import TorrentManager
-from ..core.jdownloader_booter import jdownloader
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.status_utils import (
     MirrorStatus,
@@ -103,13 +101,6 @@ async def status_pages(_, query):
         await update_status_message(key, force=True)
     elif data[2] == "ov":
         ds, ss = await TorrentManager.overall_speed()
-        if sabnzbd_client.LOGGED_IN:
-            sds = await sabnzbd_client.get_downloads()
-            sds = int(sds.get("kbpersec", "0")) * 1024
-            ds += sds
-        if jdownloader.is_connected:
-            jdres = await jdownloader.device.downloadcontroller.get_speed_in_bytes()
-            ds += jdres
         message = query.message
         tasks = {
             "Download": 0,
