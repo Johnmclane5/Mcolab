@@ -12,8 +12,6 @@ async def main():
         load_configurations,
         save_settings,
         update_aria2_options,
-        update_nzb_options,
-        update_qb_options,
         update_variables,
     )
 
@@ -26,9 +24,7 @@ async def main():
 
     await TorrentManager.initiate()
     await gather(
-        update_qb_options(),
         update_aria2_options(),
-        update_nzb_options(),
     )
     from .helper.ext_utils.files_utils import clean_all
     from .helper.ext_utils.telegraph_helper import telegraph
