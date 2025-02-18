@@ -32,10 +32,10 @@ handler_dict = {}
 leech_options = [
     "THUMBNAIL",
     "LEECH_SPLIT_SIZE",
+    "USER_DUMP",
     "LEECH_DUMP_CHAT",
     "LEECH_FILENAME_PREFIX",
     "THUMBNAIL_LAYOUT",
-    "USER_DUMP",
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
@@ -71,8 +71,7 @@ async def get_user_settings(from_user, stype="main"):
             leech_dest = "None"
 
         buttons.data_button(
-            "User Dump",
-            f"userset {user_id} menu USER_DUMP",
+            "User Dump", f"userset {user_id} menu USER_DUMP"
         )
         if user_dict.get("USER_DUMP", False):
             udump = user_dict["USER_DUMP"]
