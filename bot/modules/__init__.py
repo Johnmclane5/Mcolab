@@ -12,12 +12,6 @@ from .help import arg_usage, bot_help
 from .mirror_leech import (
     mirror,
     leech,
-    qb_leech,
-    qb_mirror,
-    jd_leech,
-    jd_mirror,
-    nzb_leech,
-    nzb_mirror,
 )
 from .restart import (
     restart_bot,
@@ -26,7 +20,6 @@ from .restart import (
     restart_sessions,
 )
 from .rss import get_rss_menu, rss_listener
-from .search import torrent_search, torrent_search_update, initiate_search_tools
 from .services import start, ping, log
 from .shell import run_shell
 from .stats import bot_stats, get_packages_version

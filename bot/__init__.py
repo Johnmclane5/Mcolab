@@ -12,7 +12,6 @@ from logging import (
     WARNING,
     ERROR,
 )
-from sabnzbdapi import SabnzbdClient
 from time import time
 from os import cpu_count
 
@@ -67,11 +66,5 @@ nzb_listener_lock = Lock()
 jd_listener_lock = Lock()
 cpu_eater_lock = Lock()
 same_directory_lock = Lock()
-
-sabnzbd_client = SabnzbdClient(
-    host="http://localhost",
-    api_key="mltb",
-    port="8070",
-)
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)
