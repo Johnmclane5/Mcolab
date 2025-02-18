@@ -36,7 +36,7 @@ class Aria2Status:
 
     def progress(self):
         try:
-            return f"{round(int(self._download.get("completedLength", "0")) / int(self._download.get("totalLength", "0")) * 100, 2)}%"
+            return f"{round(int(self._download.get('completedLength', '0')) / int(self._download.get('totalLength', '0')) * 100, 2)}%"
         except:
             return "0%"
 
