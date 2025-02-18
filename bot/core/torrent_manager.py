@@ -1,5 +1,4 @@
 from aioaria2 import Aria2WebsocketClient
-from aioqbt.client import create_client
 from asyncio import gather
 from pathlib import Path
 
@@ -8,18 +7,16 @@ from .. import LOGGER, aria2_options
 
 class TorrentManager:
     aria2 = None
-    qbittorrent = None
 
     @classmethod
     async def initiate(cls):
-        cls.aria2, cls.qbittorrent = await gather(
-            Aria2WebsocketClient.new("http://localhost:6800/jsonrpc"),
-            create_client("http://localhost:8090/api/v2/"),
+        cls.aria2 = await gather(
+            Aria2WebsocketClient.new("http://localhost:6800/jsonrpc")
         )
 
     @classmethod
     async def close_all(cls):
-        await gather(cls.aria2.close(), cls.qbittorrent.close())
+        await gather(cls.aria2.close())
 
     @classmethod
     async def aria2_remove(cls, download):
@@ -35,7 +32,6 @@ class TorrentManager:
     async def remove_all(cls):
         await cls.pause_all()
         await gather(
-            cls.qbittorrent.torrents.delete("all", True),
             cls.aria2.purgeDownloadResult(),
         )
         downloads = []

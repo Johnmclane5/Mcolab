@@ -31,20 +31,16 @@ async def main():
         update_nzb_options(),
     )
     from .helper.ext_utils.files_utils import clean_all
-    from .core.jdownloader_booter import jdownloader
     from .helper.ext_utils.telegraph_helper import telegraph
     from .helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
     from .modules import (
-        initiate_search_tools,
         get_packages_version,
         restart_notification,
     )
 
     await gather(
         save_settings(),
-        jdownloader.boot(),
         clean_all(),
-        initiate_search_tools(),
         get_packages_version(),
         restart_notification(),
         telegraph.create_account(),

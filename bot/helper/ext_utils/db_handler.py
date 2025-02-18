@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.server_api import ServerApi
 from pymongo.errors import PyMongoError
 
-from ... import LOGGER, user_data, rss_dict, qbit_options
+from ... import LOGGER, user_data, rss_dict
 from ...core.mltb_client import TgClient
 from ...core.config_manager import Config
 
@@ -74,10 +74,7 @@ class DbManager:
     async def save_qbit_settings(self):
         if self._return:
             return
-        await self.db.settings.qbittorrent.update_one(
-            {"_id": TgClient.ID}, {"$set": qbit_options}, upsert=True
-        )
-
+        
     async def update_private_file(self, path):
         if self._return:
             return
