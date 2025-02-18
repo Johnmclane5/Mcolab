@@ -34,7 +34,7 @@ from ..helper.ext_utils.bot_utils import (
 from ..core.config_manager import Config
 from ..core.mltb_client import TgClient
 from ..core.torrent_manager import TorrentManager
-from ..core.startup import update_qb_options, update_nzb_options, update_variables
+from ..core.startup import update_variables
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.task_manager import start_from_queued
 from ..helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
