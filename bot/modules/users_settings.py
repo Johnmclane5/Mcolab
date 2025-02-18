@@ -35,6 +35,7 @@ leech_options = [
     "LEECH_DUMP_CHAT",
     "LEECH_FILENAME_PREFIX",
     "THUMBNAIL_LAYOUT",
+    "USER_DUMP",
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
@@ -68,7 +69,18 @@ async def get_user_settings(from_user, stype="main"):
             leech_dest = Config.LEECH_DUMP_CHAT
         else:
             leech_dest = "None"
+
         buttons.data_button(
+            "User Dump",
+            f"userset {user_id} menu USER_DUMP",
+        )
+        if user_dict.get("USER_DUMP", False):
+            udump = user_dict["USER_DUMP"]
+        else:
+            udump = "None"
+            
+        buttons.data_button(
+
             "Leech Prefix", f"userset {user_id} menu LEECH_FILENAME_PREFIX"
         )
         if user_dict.get("LEECH_FILENAME_PREFIX", False):
@@ -174,6 +186,7 @@ Equal Splits is <b>{equal_splits}</b>
 Media Group is <b>{media_group}</b>
 Leech Prefix is <code>{escape(lprefix)}</code>
 Leech Destination is <code>{leech_dest}</code>
+User dump <code>{udump}</code>
 Leech by <b>{leech_method}</b> session
 HYBRID Leech is <b>{hybrid_leech}</b>
 Thumbnail Layout is <b>{thumb_layout}</b>
