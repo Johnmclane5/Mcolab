@@ -730,7 +730,7 @@ class FFMpeg:
         return True
     
 
-    async def merge_videos(self, folder_path):
+    async def merge_videos(self, folder_path, output_path):
         self.clear()
 
         self._total_time = 0
@@ -760,8 +760,6 @@ class FFMpeg:
                     safe_video = video.replace("'", "'\\''")  # Escape single quotes for FFmpeg
                     filelist.write(f"file '{safe_video}'\n")
 
-            output_path = f"{ospath.basename(folder_path)}.mkv"
-
             # Construct the ffmpeg command to concatenate videos
             cmd = [
                 "ffmpeg",
@@ -778,7 +776,6 @@ class FFMpeg:
             ]
 
         if mp4_file:
-            output_path = f"{ospath.basename(folder_path)}_Esub.mp4"
 
             cmd = [
                 "ffmpeg",
