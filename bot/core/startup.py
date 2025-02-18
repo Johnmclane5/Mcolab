@@ -3,6 +3,7 @@ from aiofiles import open as aiopen
 from aioshutil import rmtree
 from asyncio import create_subprocess_exec, create_subprocess_shell
 from importlib import import_module
+from os import environ
 
 from .. import (
     aria2_options,
@@ -239,8 +240,9 @@ async def load_configurations():
     ).wait()
 
     if Config.BASE_URL:
+        PORT = environ.get("PORT")
         await create_subprocess_shell(
-            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{Config.BASE_URL_PORT}"
+            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
 
     if await aiopath.exists("cfg.zip"):
