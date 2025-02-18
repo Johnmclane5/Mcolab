@@ -217,6 +217,22 @@ class TaskListener(TaskConfig):
             self.size = await get_path_size(up_dir)
             self.clear()
 
+        if self.merge:
+            up_path = await self.proceed_merge(
+                up_path,
+                gid
+            )
+            if self.is_cancelled:
+                return
+            self.is_file = await aiopath.isfile(up_path)
+            up_dir, self.name = up_path.rsplit("/", 1)
+            self.size = await get_path_size(up_dir)
+            self.subname = ""
+            self.subsize = 0
+            self.files_to_proceed = []
+            self.proceed_count = 0
+            self.progress = True
+
         if self.name_sub:
             up_path = await self.substitute(up_path)
             if self.is_cancelled:

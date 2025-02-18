@@ -105,6 +105,7 @@ class Mirror(TaskListener):
             "-ns": "",
             "-tl": "",
             "-ff": set(),
+            "mv": False,
         }
 
         arg_parser(input_list[1:], args)
@@ -135,6 +136,7 @@ class Mirror(TaskListener):
         self.folder_name = f"/{args['-m']}".rstrip("/") if len(args['-m']) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
+        self.merge = args["-mv"]
 
         headers = args["-h"]
         is_bulk = args["-b"]
