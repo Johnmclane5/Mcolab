@@ -7,16 +7,14 @@ from .. import LOGGER, aria2_options
 
 class TorrentManager:
     aria2 = None
-    
+
     @classmethod
     async def initiate(cls):
-        cls.aria2, cls.qbittorrent = await gather(
-            Aria2WebsocketClient.new("http://localhost:6800/jsonrpc"),
-        )
+        cls.aria2 = await Aria2WebsocketClient.new("http://localhost:6800/jsonrpc")
 
     @classmethod
     async def close_all(cls):
-        await gather(cls.aria2.close(), cls.qbittorrent.close())
+        await cls.aria2.close()
 
     @classmethod
     async def aria2_remove(cls, download):
@@ -31,10 +29,7 @@ class TorrentManager:
     @classmethod
     async def remove_all(cls):
         await cls.pause_all()
-        await gather(
-            cls.qbittorrent.torrents.delete("all", True),
-            cls.aria2.purgeDownloadResult(),
-        )
+        await cls.aria2.purgeDownloadResult()
         downloads = []
         results = await gather(cls.aria2.tellActive(), cls.aria2.tellWaiting(0, 1000))
         for res in results:
@@ -50,16 +45,14 @@ class TorrentManager:
 
     @classmethod
     async def overall_speed(cls):
-        s1, s2 = await gather(
-            cls.qbittorrent.transfer.info(), cls.aria2.getGlobalStat()
-        )
-        download_speed = s1.dl_info_speed + int(s2.get("downloadSpeed", "0"))
-        upload_speed = s1.up_info_speed + int(s2.get("uploadSpeed", "0"))
+        s2 = await cls.aria2.getGlobalStat()
+        download_speed = int(s2.get("downloadSpeed", "0"))
+        upload_speed = int(s2.get("uploadSpeed", "0"))
         return download_speed, upload_speed
 
     @classmethod
     async def pause_all(cls):
-        await gather(cls.aria2.forcePauseAll(), cls.qbittorrent.torrents.stop("all"))
+        await cls.aria2.forcePauseAll()
 
     @classmethod
     async def change_aria2_option(cls, key, value):

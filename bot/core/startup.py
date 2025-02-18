@@ -23,7 +23,12 @@ from .mltb_client import TgClient
 from .torrent_manager import TorrentManager
 
 async def update_aria2_options():
-    await TorrentManager.aria2.changeGlobalOption(aria2_options)
+    if not aria2_options:
+        op = await TorrentManager.aria2.getGlobalOption()
+        aria2_options.update(op)
+    else:
+        await TorrentManager.aria2.changeGlobalOption(aria2_options)
+
 
 async def load_settings():
     if not Config.DATABASE_URL:
