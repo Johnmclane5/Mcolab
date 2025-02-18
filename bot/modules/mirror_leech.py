@@ -89,6 +89,7 @@ class Mirror(TaskListener):
             "-hl": False,
             "-bt": False,
             "-ut": False,
+            "mv": False,
             "-i": 0,
             "-sp": 0,
             "link": "",
@@ -105,7 +106,6 @@ class Mirror(TaskListener):
             "-ns": "",
             "-tl": "",
             "-ff": set(),
-            "mv": False,
         }
 
         arg_parser(input_list[1:], args)
@@ -118,6 +118,7 @@ class Mirror(TaskListener):
         self.link = args["link"]
         self.compress = args["-z"]
         self.extract = args["-e"]
+        self.merge = args["-mv"]
         self.join = args["-j"]
         self.thumb = args["-t"]
         self.split_size = args["-sp"]
@@ -136,7 +137,6 @@ class Mirror(TaskListener):
         self.folder_name = f"/{args['-m']}".rstrip("/") if len(args['-m']) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
-        self.merge = args["-mv"]
 
         headers = args["-h"]
         is_bulk = args["-b"]
