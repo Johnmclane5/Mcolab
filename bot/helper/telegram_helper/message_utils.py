@@ -1,5 +1,5 @@
 from asyncio import sleep
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, FloodPremiumWait
 from re import match as re_match
 from time import time
 
@@ -73,7 +73,7 @@ async def send_rss(text, chat_id, thread_id):
             message_thread_id=thread_id,
             disable_notification=True,
         )
-    except (FloodWait) as f:
+    except (FloodWait, FloodPremiumWait) as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await send_rss(text)
