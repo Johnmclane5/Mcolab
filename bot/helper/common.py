@@ -78,7 +78,7 @@ class TaskConfig:
         self.size = 0
         self.subsize = 0
         self.proceed_count = 0
-        self.merge = False
+        self.merge = ""
         self.is_leech = False
         self.is_qbit = False
         self.is_nzb = False
@@ -1052,8 +1052,9 @@ class TaskConfig:
                     except:
                         self.is_cancelled = True
 
-    async def proceed_merge(self, dl_path, gid):  
+    async def proceed_merge(self, dl_path, gid, output_name):  
         checked = False
+        output_path = ospath.join(dl_path, output_name)
         try:
             ffmpeg = FFMpeg(self)
             if self.is_cancelled:
@@ -1072,8 +1073,8 @@ class TaskConfig:
                 self.progress = True
             LOGGER.info(f"Running ffmpeg cmd for: {dl_path}")
             self.subsize = await get_path_size(dl_path)
-            self.subname = ospath.basename(dl_path)
-            output_path = await ffmpeg.merge_videos(dl_path)
+            self.subname = output_name
+            await ffmpeg.merge_videos(dl_path, output_path)
         finally:
             if checked:
                     cpu_eater_lock.release()
