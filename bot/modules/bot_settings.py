@@ -1,4 +1,5 @@
 from aiofiles import open as aiopen
+from os import environ
 from aiofiles.os import remove, rename, path as aiopath
 from aioshutil import rmtree
 from asyncio import (
@@ -69,7 +70,6 @@ async def get_buttons(key=None, edit_type=None):
         buttons.data_button("Qbit Settings", "botset qbit")
         buttons.data_button("Aria2c Settings", "botset aria")
         buttons.data_button("Sabnzbd Settings", "botset nzb")
-        buttons.data_button("JDownloader Sync", "botset syncjd")
         buttons.data_button("Close", "botset close")
         msg = "Bot Settings:"
     elif edit_type is not None:
@@ -100,27 +100,6 @@ async def get_buttons(key=None, edit_type=None):
                 if key == "newkey"
                 else f"Send a valid value for {key}. Current value is '{aria2_options[key]}'. Timeout: 60 sec"
             )
-        elif edit_type == "qbitvar":
-            buttons.data_button("Back", "botset qbit")
-            buttons.data_button("Empty String", f"botset emptyqbit {key}")
-            buttons.data_button("Close", "botset close")
-            msg = f"Send a valid value for {key}. Current value is '{qbit_options[key]}'. Timeout: 60 sec"
-        elif edit_type == "nzbvar":
-            buttons.data_button("Back", "botset nzb")
-            buttons.data_button("Default", f"botset resetnzb {key}")
-            buttons.data_button("Empty String", f"botset emptynzb {key}")
-            buttons.data_button("Close", "botset close")
-            msg = f"Send a valid value for {key}. Current value is '{nzb_options[key]}'.\nIf the value is list then seperate them by space or ,\nExample: .exe,info or .exe .info\nTimeout: 60 sec"
-        elif edit_type.startswith("nzbsevar"):
-            index = 0 if key == "newser" else int(edit_type.replace("nzbsevar", ""))
-            buttons.data_button("Back", f"botset nzbser{index}")
-            if key != "newser":
-                buttons.data_button("Empty", f"botset emptyserkey {index} {key}")
-            buttons.data_button("Close", "botset close")
-            if key == "newser":
-                msg = "Send one server as dictionary {}, like in config.py without []. Timeout: 60 sec"
-            else:
-                msg = f"Send a valid value for {key} in server {Config.USENET_SERVERS[index]['name']}. Current value is {Config.USENET_SERVERS[index][key]}. Timeout: 60 sec"
     elif key == "var":
         conf_dict = Config.get_all()
         for k in list(conf_dict.keys())[start : 10 + start]:
@@ -161,6 +140,10 @@ Timeout: 60 sec"""
                 f"{int(x / 10)}", f"botset start aria {x}", position="footer"
             )
         msg = f"Aria2c Options | Page: {int(start / 10)} | State: {state}"
+
+    button = buttons.build_menu(1) if key is None else buttons.build_menu(2)
+    return msg, button
+
 
 async def update_buttons(message, key=None, edit_type=None):
     msg, button = await get_buttons(key, edit_type)
@@ -251,6 +234,7 @@ async def edit_variable(_, message, pre_message, key):
         await rclone_serve_booter()
     elif key == "RSS_DELAY":
         add_job()
+
 
 @new_task
 async def edit_aria(_, message, pre_message, key):
@@ -384,17 +368,6 @@ async def edit_bot_settings(client, query):
         await query.answer()
         globals()["start"] = 0
         await update_buttons(message, None)
-    elif data[1] == "syncjd":
-        if not Config.JD_EMAIL or not Config.JD_PASS:
-            await query.answer(
-                "No Email or Password provided!",
-                show_alert=True,
-            )
-            return
-        await query.answer(
-            "Syncronization Started. JDownloader will get restarted. It takes up to 10 sec!",
-            show_alert=True,
-        )
     elif data[1] in ["var", "aria", "qbit", "nzb", "nzbserver"] or data[1].startswith(
         "nzbser"
     ):
@@ -582,8 +555,9 @@ async def load_config():
 
     await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
     if Config.BASE_URL:
+        PORT = environ.get("PORT")
         await create_subprocess_shell(
-            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{Config.BASE_URL_PORT}"
+            f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
 
     if Config.DATABASE_URL:
