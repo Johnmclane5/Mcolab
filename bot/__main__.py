@@ -71,7 +71,7 @@ from .helper.telegram_helper.message_utils import (
 )
 
 def sync_exit_clean_up(*args):
-    asyncio.run(exit_clean_up())
+    asyncio.run(exit_clean_up(None, None))
 
 
 @new_task
