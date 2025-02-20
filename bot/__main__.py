@@ -47,10 +47,12 @@ async def main():
 
 bot_loop.run_until_complete(main())
 
+import asyncio
 from .helper.ext_utils.bot_utils import create_help_buttons
 from .helper.listeners.aria2_listener import add_aria2_callbacks
 from .core.handlers import add_handlers
 from .helper.ext_utils.files_utils import exit_clean_up
+
 
 add_aria2_callbacks()
 create_help_buttons()
@@ -67,6 +69,9 @@ from .helper.telegram_helper.message_utils import (
     edit_message,
     delete_message,
 )
+
+def sync_exit_clean_up(*args):
+    asyncio.run(exit_clean_up())
 
 
 @new_task
@@ -98,5 +103,5 @@ TgClient.bot.add_handler(
 )
 
 LOGGER.info("Bot Started!")
-signal(SIGINT, await exit_clean_up)
+signal(SIGINT, sync_exit_clean_up)
 bot_loop.run_forever()
