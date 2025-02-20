@@ -1,6 +1,7 @@
 from . import LOGGER, bot_loop
 from .core.mltb_client import TgClient
 from .core.config_manager import Config
+from signal import SIGINT, signal
 
 Config.load()
 
@@ -96,4 +97,5 @@ TgClient.bot.add_handler(
 )
 
 LOGGER.info("Bot Started!")
+signal(SIGINT, exit_clean_up)
 bot_loop.run_forever()
