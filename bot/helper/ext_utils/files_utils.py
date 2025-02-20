@@ -1,4 +1,3 @@
-import asyncio
 from aioshutil import rmtree as aiormtree
 from asyncio import create_subprocess_exec, sleep, wait_for
 from asyncio.subprocess import PIPE
@@ -137,10 +136,10 @@ async def clean_all():
         pass
     await aiomakedirs(DOWNLOAD_DIR, exist_ok=True)
 
-def exit_clean_up(_, __):
+async def exit_clean_up(_, __):
     try:
         LOGGER.info("Please wait! Bot clean up and stop the running downloads...")
-        asyncio.run(clean_all()) 
+        await clean_all()
         srun(
             ["pkill", "-9", "-f", "gunicorn|aria|ffmpeg|rclone|7z|split"],
             check=False,
