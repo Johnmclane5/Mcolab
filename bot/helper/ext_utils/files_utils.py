@@ -136,6 +136,19 @@ async def clean_all():
         pass
     await aiomakedirs(DOWNLOAD_DIR, exist_ok=True)
 
+async def exit_clean_up(_, __):
+    try:
+        LOGGER.info("Please wait! Bot clean up and stop the running downloads...")
+        await clean_all()
+        srun(
+            ["pkill", "-9", "-f", "gunicorn|aria|ffmpeg|rclone|7z|split"],
+            check=False,
+        )
+        exit(0)
+    except KeyboardInterrupt:
+        LOGGER.warning("Force Exiting before the cleanup finishes!")
+        exit(1)
+
 
 async def clean_unwanted(opath):
     LOGGER.info(f"Cleaning unwanted files/folders: {opath}")
