@@ -27,7 +27,7 @@ async def main():
     await gather(
         update_aria2_options(),
     )
-    from .helper.ext_utils.files_utils import clean_all, exit_clean_up
+    from .helper.ext_utils.files_utils import clean_all
     from .helper.ext_utils.telegraph_helper import telegraph
     from .helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
     from .modules import (
@@ -98,5 +98,5 @@ TgClient.bot.add_handler(
 )
 
 LOGGER.info("Bot Started!")
-signal(SIGINT, exit_clean_up)
+signal(SIGINT, await exit_clean_up)
 bot_loop.run_forever()
