@@ -1,4 +1,3 @@
-import asyncio
 from aioshutil import rmtree as aiormtree
 from subprocess import run as srun
 from asyncio import create_subprocess_exec, sleep, wait_for
@@ -140,7 +139,6 @@ async def clean_all():
 
 def exit_clean_up(_, __):
     try:
-        asyncio.run(clean_all())
         LOGGER.info("Please wait! Bot clean up and stop the running downloads...")
         srun(
             ["pkill", "-9", "-f", "gunicorn|aria|ffmpeg|rclone|7z|split"],
