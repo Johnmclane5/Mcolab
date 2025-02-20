@@ -44,8 +44,6 @@ async def main():
     )
 
 
-bot_loop.run_until_complete(main())
-
 from .helper.ext_utils.bot_utils import create_help_buttons
 from .helper.listeners.aria2_listener import add_aria2_callbacks
 from .core.handlers import add_handlers
@@ -99,4 +97,6 @@ TgClient.bot.add_handler(
 
 LOGGER.info("Bot Started!")
 signal(SIGINT, exit_clean_up)
+
+bot_loop.run_until_complete(main())
 bot_loop.run_forever()
