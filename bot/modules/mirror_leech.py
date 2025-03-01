@@ -344,8 +344,9 @@ class Mirror(TaskListener):
                     return
 
         if file_ is not None:
+            msg_caption = f'{reply_to.caption if reply_to.caption else ""}'
             await TelegramDownloadHelper(self).add_download(
-                reply_to, f"{path}/", session
+                reply_to, f"{path}/", msg_caption, session
             )
         elif isinstance(self.link, dict):
             await add_direct_download(self, path)
