@@ -575,6 +575,7 @@ async def edit_user_settings(client, query):
                 await remove(fpath)
             if data[3] in user_dict:
                 del user_dict[data[3]]
+                await database.update_user_doc(user_id, data[3], "")
         else:
             update_user_ldata(user_id, data[3], "")
         await database.update_user_data(user_id)
