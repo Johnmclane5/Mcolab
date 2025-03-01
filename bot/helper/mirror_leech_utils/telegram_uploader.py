@@ -1,4 +1,5 @@
 import contextlib
+import imgbbpy
 from PIL import Image
 from aioshutil import rmtree
 from asyncio import sleep
@@ -28,7 +29,7 @@ from tenacity import (
 
 from ...core.config_manager import Config
 from ...core.mltb_client import TgClient
-from ..ext_utils.bot_utils import sync_to_async
+from ..ext_utils.bot_utils import sync_to_async, extract_movie_info, get_movie_poster, humanbytes
 from ..ext_utils.files_utils import is_archive, get_base_name
 from ..telegram_helper.message_utils import delete_message
 from ..ext_utils.media_utils import (
@@ -38,8 +39,15 @@ from ..ext_utils.media_utils import (
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
 )
+from motor.motor_asyncio import AsyncIOMotorClient 
 
 LOGGER = getLogger(__name__)
+# Initialize MongoDB client
+if Config.MONGO_URI:
+    mongo_client = AsyncIOMotorClient(Config.MONGO_URI)
+    db = mongo_client['f_info']
+    collection = db['details']
+    imgclient = imgbbpy.SyncClient(Config.IMGBB_API_KEY)
 
 
 class TelegramUploader:
@@ -339,6 +347,20 @@ class TelegramUploader:
         self._is_corrupted = False
         try:
             is_video, is_audio, is_image = await get_document_type(self._up_path)
+            ss_thumb = None
+
+            movie_name, release_year = await extract_movie_info(ospath.splitext(file)[0])
+            
+            if Config.MONGO_URI:
+                f_name = re_sub(r'\.mkv|\.mp4|\.webm', '', ospath.splitext(file)[0])
+                existing_document = await collection.find_one({"file_name": f_name})
+                if existing_document:
+                    return None
+                
+            if Config.TMDB_API_KEY:
+                tmdb_poster_url = await get_movie_poster(movie_name, release_year)
+            else:
+                tmdb_poster_url = None
 
             if not is_image and thumb is None:
                 file_name = ospath.splitext(file)[0]
@@ -374,11 +396,14 @@ class TelegramUploader:
                 key = "videos"
                 duration = (await get_media_info(self._up_path))[0]
                 if thumb is None and self._listener.thumbnail_layout:
-                    thumb = await get_multiple_frames_thumbnail(
+                    ss_thumb = await get_multiple_frames_thumbnail(
                         self._up_path,
                         self._listener.thumbnail_layout,
                         self._listener.screen_shots,
                     )
+                if tmdb_poster_url and thumb is None:
+                    thumb =  await self.get_custom_thumb(tmdb_poster_url)
+                    LOGGER.info("Got the poster")
                 if thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, duration)
                 if thumb is not None and thumb != "none":
@@ -433,7 +458,21 @@ class TelegramUploader:
                     progress=self._upload_progress,
                 )
 
-            await self._copy_message()
+            cpy_msg = await self._copy_message()
+            if self._listener.thumbnail_layout and cpy_msg is not None:
+                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cpy_msg.caption)
+                ss = imgclient.upload(file=f"{ss_thumb}", name=file_name)
+                file_size = humanbytes(cpy_msg.video.file_size) 
+                    
+                tg_document = {
+                    "file_id": cpy_msg.id,
+                    "file_name": file_name,
+                    "file_size": file_size,
+                    "timestamp": cpy_msg.video.date,
+                    "thumb_url": ss.url
+                } 
+                 
+                await collection.insert_one(tg_document)
 
             if (
                 not self._listener.is_cancelled
@@ -498,7 +537,7 @@ class TelegramUploader:
                         self._sent_msg.chat.id,
                         self._sent_msg.id,
                     )
-                    if msg and msg.document and msg.document.mime_type.startswith('video/'):
+                    if msg and msg.video:
                         cpy_msg = await msg.copy(target)
                     return cpy_msg
                 except Exception as e:

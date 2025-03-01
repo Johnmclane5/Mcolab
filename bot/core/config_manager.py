@@ -14,6 +14,7 @@ class Config:
     EXCLUDED_EXTENSIONS = ""
     FFMPEG_CMDS = {}
     FILELION_API = ""
+    TMDB_API_KEY = ""
     GDRIVE_ID = ""
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""
@@ -24,6 +25,7 @@ class Config:
     LEECH_FILENAME_PREFIX = ""
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
+    MONGO_URI = ""
     HYBRID_LEECH = False
     NAME_SUBSTITUTE = ""
     OWNER_ID = 0
