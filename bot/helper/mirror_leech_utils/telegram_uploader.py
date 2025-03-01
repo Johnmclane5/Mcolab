@@ -13,6 +13,7 @@ from aiofiles.os import (
     remove,
     path as aiopath,
     rename,
+    mkdir
 )
 from pyrogram.types import (
     InputMediaVideo,
@@ -29,7 +30,7 @@ from tenacity import (
 
 from ...core.config_manager import Config
 from ...core.mltb_client import TgClient
-from ..ext_utils.bot_utils import sync_to_async, extract_movie_info, get_movie_poster, humanbytes
+from ..ext_utils.bot_utils import sync_to_async, extract_movie_info, get_movie_poster, humanbytes, download_image_url
 from ..ext_utils.files_utils import is_archive, get_base_name
 from ..telegram_helper.message_utils import delete_message
 from ..ext_utils.media_utils import (
@@ -42,6 +43,7 @@ from ..ext_utils.media_utils import (
 from motor.motor_asyncio import AsyncIOMotorClient 
 
 LOGGER = getLogger(__name__)
+
 # Initialize MongoDB client
 if Config.MONGO_URI:
     mongo_client = AsyncIOMotorClient(Config.MONGO_URI)
@@ -72,6 +74,19 @@ class TelegramUploader:
         self._user_session = self._listener.user_transmission
         self._error = ""
         self._user_dump = ""
+
+    async def get_custom_thumb(self, thumb):
+        photo_dir = await download_image_url(thumb)
+    
+        if await aiopath.exists(photo_dir):
+            path = "Thumbnails"
+            if not await aiopath.isdir(path):
+                await mkdir(path)
+            des_dir = ospath.join(path, f'{time()}.jpg')
+            await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
+            await remove(photo_dir)
+            return des_dir
+        return None      
 
     async def _upload_progress(self, current, _):
         if self._listener.is_cancelled:

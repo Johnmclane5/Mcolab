@@ -20,6 +20,13 @@ from .help_messages import (
     MIRROR_HELP_DICT,
     CLONE_HELP_DICT,
 )
+from aiofiles.os import path as aiopath, mkdir
+from os import path as ospath
+from aiofiles import open as aiopen
+from aiohttp import ClientSession as aioClientSession
+from logging import getLogger
+
+LOGGER = getLogger(__name__)
 
 COMMAND_USAGE = {}
 
@@ -315,3 +322,20 @@ def humanbytes(size):
         i += 1
     f = ('%.2f' % size).rstrip('0').rstrip('.')
     return f"{f} {suffixes[i]}"
+
+async def download_image_url(url):
+    path = "Images/"
+    if not await aiopath.isdir(path):
+        await mkdir(path)
+    image_name = url.split('/')[-1]
+    des_dir = ospath.join(path, image_name)
+    async with aioClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                async with aiopen(des_dir, 'wb') as file:
+                    async for chunk in response.content.iter_chunked(1024):
+                        await file.write(chunk)
+                LOGGER.info(f"Image Downloaded Successfully as {image_name}")
+            else:
+                LOGGER.error(f"Failed to Download Image from {url}")
+    return des_dir
