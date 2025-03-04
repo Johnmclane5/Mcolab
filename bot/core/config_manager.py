@@ -19,6 +19,7 @@ class Config:
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""
     IS_TEAM_DRIVE = False
+    IMGBB_API_KEY = ""
     JD_EMAIL = ""
     JD_PASS = ""
     LEECH_DUMP_CHAT = ""
