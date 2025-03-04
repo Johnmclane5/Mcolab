@@ -204,7 +204,7 @@ async def get_video_thumbnail(video_file, duration):
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
-    duration = duration // 2
+    duration = 60
     cmd = [
         "ffmpeg",
         "-hide_banner",
