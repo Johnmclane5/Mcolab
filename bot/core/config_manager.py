@@ -19,14 +19,13 @@ class Config:
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""
     IS_TEAM_DRIVE = False
-    IMGBB_API_KEY = ""
     JD_EMAIL = ""
     JD_PASS = ""
     LEECH_DUMP_CHAT = ""
+    SSCHAT_ID = ""
     LEECH_FILENAME_PREFIX = ""
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
-    MONGO_URI = ""
     HYBRID_LEECH = False
     NAME_SUBSTITUTE = ""
     OWNER_ID = 0
