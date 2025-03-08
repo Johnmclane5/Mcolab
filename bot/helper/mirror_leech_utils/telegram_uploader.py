@@ -358,13 +358,7 @@ class TelegramUploader:
             ss_thumb = None
 
             movie_name, release_year = await extract_movie_info(ospath.splitext(file)[0])
-            
-            if Config.MONGO_URI:
-                f_name = re_sub(r'\.mkv|\.mp4|\.webm', '', ospath.splitext(file)[0])
-                existing_document = await collection.find_one({"file_name": f_name})
-                if existing_document:
-                    return None
-                
+                            
             if Config.TMDB_API_KEY:
                 tmdb_poster_url = await get_movie_poster(movie_name, release_year)
             else:
