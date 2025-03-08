@@ -44,13 +44,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 LOGGER = getLogger(__name__)
 
-# Initialize MongoDB client
-if Config.MONGO_URI:
-    mongo_client = AsyncIOMotorClient(Config.MONGO_URI)
-    db = mongo_client['f_info']
-    collection = db['details']
-    imgclient = imgbbpy.SyncClient(Config.IMGBB_API_KEY)
-
 
 class TelegramUploader:
     def __init__(self, listener, path):
@@ -474,20 +467,8 @@ class TelegramUploader:
                 )
 
             cpy_msg = await self._copy_message()
-            if self._listener.thumbnail_layout and cpy_msg is not None:
-                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cpy_msg.caption)
-                ss = imgclient.upload(file=f"{ss_thumb}", name=file_name)
-                file_size = humanbytes(cpy_msg.video.file_size) 
-                    
-                tg_document = {
-                    "file_id": cpy_msg.id,
-                    "file_name": file_name,
-                    "file_size": file_size,
-                    "timestamp": cpy_msg.video.date,
-                    "thumb_url": ss.url
-                } 
-                 
-                await collection.insert_one(tg_document)
+            if self._listener.thumbnail_layout:
+                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cpy_msg.caption)                 
 
             if (
                 not self._listener.is_cancelled
