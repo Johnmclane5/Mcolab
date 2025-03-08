@@ -461,8 +461,14 @@ class TelegramUploader:
                 )
 
             cpy_msg = await self._copy_message()
-            if self._listener.thumbnail_layout:
-                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cpy_msg.caption)                 
+            if self._listener.thumbnail_layout and ss_thumb:
+                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cpy_msg.caption)
+                await self._listener.client.send_photo(
+                    chat_id=int(Config.SSCHAT_ID),
+                    photo=ss_thumb,
+                    caption=f"{file_name}\n\n Now Available ✅",
+                    disable_notification=True,
+                )
 
             if (
                 not self._listener.is_cancelled
