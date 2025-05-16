@@ -1,9 +1,11 @@
-from pyrogram import Client, enums
+from pyrogram import Client, enums, utils as pyroutils
 from asyncio import Lock
 
 from .. import LOGGER
 from .config_manager import Config
 
+pyroutils.MIN_CHAT_ID = -999999999999
+pyroutils.MIN_CHANNEL_ID = -100999999999999
 
 class TgClient:
     _lock = Lock()
