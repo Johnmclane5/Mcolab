@@ -289,21 +289,18 @@ async def get_movie_poster(movie_name, release_year):
                         media_type = result['media_type']
                         movie_id = result['id']
 
+                        tmdb_movie_image_url = f'https://api.themoviedb.org/3/{media_type}/{movie_id}/images?api_key={TMDB_API_KEY}&language=en-US&include_image_language=en,hi'
 
-
-                        #tmdb_movie_image_url = f'https://api.themoviedb.org/3/{media_type}/{movie_id}/images?api_key={TMDB_API_KEY}&language=en-US&include_image_language=en,hi'
-
-                        #async with session.get(tmdb_movie_image_url) as movie_response:
-                            #movie_images = await movie_response.json()
+                        async with session.get(tmdb_movie_image_url) as movie_response:
+                            movie_images = await movie_response.json()
  
-
                         # Use the backdrop_path or poster_path
-                        #poster_path = None
-                        #if 'backdrops' in movie_images and movie_images['backdrops']:
-                            #poster_path = movie_images['backdrops'][0]['file_path']
+                            poster_path = None
+                            if 'backdrops' in movie_images and movie_images['backdrops']:
+                                poster_path = movie_images['backdrops'][0]['file_path']
                                                         
-                        poster_path = result.get('poster_path') 
-                        if poster_path:
+                            elif 'backdrop_path' in result and result['backdrop_path']:
+                                poster_path = result['backdrop_path']
                             poster_url = f"https://image.tmdb.org/t/p/original{poster_path}"
                             return poster_url
     except Exception as e:
