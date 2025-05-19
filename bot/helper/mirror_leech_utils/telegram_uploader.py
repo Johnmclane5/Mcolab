@@ -151,13 +151,13 @@ class TelegramUploader:
 
     async def _prepare_file(self, file_, dirpath):
         if self._lprefix:
-            cap_mono = f"{self._lprefix} <code>{file_}</code>"
+            cap_mono = f"{self._lprefix} <b>{file_}</b>"
             self._lprefix = re_sub("<.*?>", "", self._lprefix)
             new_path = ospath.join(dirpath, f"{self._lprefix} {file_}")
             await rename(self._up_path, new_path)
             self._up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"<b>{file_}</b>"
         if len(file_) > 60:
             if is_archive(file_):
                 name = get_base_name(file_)
@@ -381,7 +381,7 @@ class TelegramUploader:
                 if tmdb_poster_url and thumb is None:
                     thumb =  await self.get_custom_thumb(tmdb_poster_url)
                     LOGGER.info("Got the poster")
-                    
+
                 if is_video and thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, None)
 
