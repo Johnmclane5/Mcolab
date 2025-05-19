@@ -302,8 +302,8 @@ async def get_movie_poster(movie_name, release_year):
                         #if 'backdrops' in movie_images and movie_images['backdrops']:
                             #poster_path = movie_images['backdrops'][0]['file_path']
                                                         
-                        if 'poster_path' in result and result['poster_path']:
-                            poster_path = result['poster_path']
+                        poster_path = result.get('poster_path') 
+                        if poster_path:
                             poster_url = f"https://image.tmdb.org/t/p/original{poster_path}"
                             return poster_url
     except Exception as e:
