@@ -378,6 +378,10 @@ class TelegramUploader:
                 or (not is_video and not is_audio and not is_image)
             ):
                 key = "documents"
+                if tmdb_poster_url and thumb is None:
+                    thumb =  await self.get_custom_thumb(tmdb_poster_url)
+                    LOGGER.info("Got the poster")
+                    
                 if is_video and thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, None)
 
