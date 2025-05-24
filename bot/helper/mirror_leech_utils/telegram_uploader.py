@@ -385,12 +385,12 @@ class TelegramUploader:
                 if is_video and thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, None)
 
-                if self._listener.thumbnail_layout:
-                    ss_thumb = await get_multiple_frames_thumbnail(
-                    self._up_path,
-                    self._listener.thumbnail_layout,
-                    self._listener.screen_shots,
-                    )
+                #if self._listener.thumbnail_layout:
+                    #ss_thumb = await get_multiple_frames_thumbnail(
+                    #self._up_path,
+                    #self._listener.thumbnail_layout,
+                    #self._listener.screen_shots,
+                    #)
 
                 if self._listener.is_cancelled:
                     return
