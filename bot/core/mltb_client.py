@@ -25,7 +25,7 @@ class TgClient:
             Config.TELEGRAM_API,
             Config.TELEGRAM_HASH,
             bot_token=Config.BOT_TOKEN,
-            parse_mode=enums.ParseMode.HTML,
+            parse_mode=enums.ParseMode.HTML
         )
         await cls.bot.start()
         cls.NAME = cls.bot.me.username
@@ -42,6 +42,7 @@ class TgClient:
                     proxy=Config.TG_PROXY,
                     session_string=Config.USER_SESSION_STRING,
                     parse_mode=enums.ParseMode.HTML,
+                    no_updates = True,
                     sleep_threshold=60,
                 )
                 await cls.user.start()
