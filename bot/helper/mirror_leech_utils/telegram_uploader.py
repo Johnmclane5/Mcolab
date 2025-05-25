@@ -544,7 +544,7 @@ class TelegramUploader:
                         self._sent_msg.chat.id,
                         self._sent_msg.id,
                     )
-                    if msg and msg.video:
+                    if msg and msg.document.mime_type.startswith("video/"):
                         cpy_msg = await msg.copy(target)
                     return cpy_msg
                 except Exception as e:
