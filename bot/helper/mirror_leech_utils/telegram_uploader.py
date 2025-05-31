@@ -474,12 +474,12 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             if self._listener.thumbnail_layout and ss_thumb:
                 file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cap_mono)
+                file_name = re_sub(r'</?code>', '', file_name)
                 await self._listener.client.send_photo(
                     chat_id=int(Config.SSCHAT_ID),
                     photo=ss_thumb,
                     caption=f"<b>{file_name}</b>\n\n Now Available ✅",
-                    disable_notification=True,
-                    parse_mode="html"
+                    disable_notification=True
                 )
 
             if (
