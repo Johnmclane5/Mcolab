@@ -479,6 +479,7 @@ class TelegramUploader:
                     photo=ss_thumb,
                     caption=f"<b>{file_name}</b>\n\n Now Available ✅",
                     disable_notification=True,
+                    parse_mode="html"
                 )
 
             if (
