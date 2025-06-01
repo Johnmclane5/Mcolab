@@ -9,12 +9,14 @@ class Config:
     BOT_TOKEN = ""
     CMD_SUFFIX = ""
     DATABASE_URL = ""
+    DB_URL = ""
     DEFAULT_UPLOAD = "rc"
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""
     FFMPEG_CMDS = {}
     FILELION_API = ""
     TMDB_API_KEY = ""
+    IMGBB_API_KEY = ""
     GDRIVE_ID = ""
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""

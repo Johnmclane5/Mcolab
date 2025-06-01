@@ -42,6 +42,9 @@ from ..ext_utils.media_utils import (
 )
 from motor.motor_asyncio import AsyncIOMotorClient 
 
+mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
+db = mongo_client['f_info']
+
 LOGGER = getLogger(__name__)
 
 
@@ -475,6 +478,18 @@ class TelegramUploader:
             if self._listener.thumbnail_layout and ss_thumb:
                 file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cap_mono)
                 file_name = re_sub(r'</?code>', '', file_name)
+                imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                uploaded = await imgbb_client.upload(file=ss_thumb)
+                image_url = uploaded.url
+                await imgbb_client.close()
+
+                # Store in MongoDB
+                post_doc = {
+                    "image_url": image_url,
+                    "caption": file_name,
+                }
+                await db["posts"].insert_one(post_doc)
+                
                 await self._listener.client.send_photo(
                     chat_id=int(Config.SSCHAT_ID),
                     photo=ss_thumb,
