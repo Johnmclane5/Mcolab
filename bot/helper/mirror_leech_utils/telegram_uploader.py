@@ -42,11 +42,14 @@ from ..ext_utils.media_utils import (
 )
 from motor.motor_asyncio import AsyncIOMotorClient 
 
-mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
-db = mongo_client['f_info']
-
 LOGGER = getLogger(__name__)
 
+try:
+    mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
+    db = mongo_client['f_info']
+except Exception as e:
+    LOGGER.error(f"Failed to connect to MongoDB: {e}")
+    db = None
 
 class TelegramUploader:
     def __init__(self, listener, path):
