@@ -480,7 +480,6 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             if self._listener.thumbnail_layout and ss_thumb:
                 file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cap_mono)
-                file_name = re_sub(r'</?code>', '', file_name)
                 imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
                 uploaded = await imgbb_client.upload(file=ss_thumb)
                 image_url = uploaded.url
