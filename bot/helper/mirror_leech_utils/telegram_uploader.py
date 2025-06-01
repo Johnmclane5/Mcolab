@@ -478,7 +478,7 @@ class TelegramUploader:
                 await self._listener.client.send_photo(
                     chat_id=int(Config.SSCHAT_ID),
                     photo=ss_thumb,
-                    caption=f"<b>{file_name}</b>\n\n Now Available ✅",
+                    caption=f"<b>{file_name}</b>",
                     disable_notification=True
                 )
 
