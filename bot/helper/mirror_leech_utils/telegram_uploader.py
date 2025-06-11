@@ -41,12 +41,13 @@ from ..ext_utils.media_utils import (
     get_multiple_frames_thumbnail,
 )
 from motor.motor_asyncio import AsyncIOMotorClient 
+from ..ext_utils.extras import extract_file_info
 
 LOGGER = getLogger(__name__)
 
 try:
     mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
-    db = mongo_client['f_info']
+    db = mongo_client['bot4index']
 except Exception as e:
     LOGGER.error(f"Failed to connect to MongoDB: {e}")
     db = None
@@ -478,28 +479,21 @@ class TelegramUploader:
                 )
 
             cpy_msg = await self._copy_message()
+            file_info = await extract_file_info(cpy_msg)
             if self._listener.thumbnail_layout and ss_thumb:
-                file_name = re_sub(r'\.mkv|\.mp4|\.webm', '', cap_mono)
-                file_name = re_sub(r'</?code>', '', file_name)
                 imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                uploaded = await imgbb_client.upload(file=ss_thumb)
-                image_url = uploaded.url
+                screenshot = await imgbb_client.upload(file=ss_thumb)
+                thumbnail = await imgbb_client.upload(file=thumb)
                 await imgbb_client.close()
 
                 # Store in MongoDB
                 post_doc = {
-                    "image_url": image_url,
-                    "caption": file_name,
+                    "ss_url": screenshot.url,
+                    "thumb_url": thumbnail.url,
+                    **file_info,
                 }
-                await db["posts"].insert_one(post_doc)
+                await db["n_files"].insert_one(post_doc)
                 
-                await self._listener.client.send_photo(
-                    chat_id=int(Config.SSCHAT_ID),
-                    photo=ss_thumb,
-                    caption=f"<b>{file_name}</b>",
-                    disable_notification=True
-                )
-
             if (
                 not self._listener.is_cancelled
                 and self._media_group
