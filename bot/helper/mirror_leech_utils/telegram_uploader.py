@@ -390,8 +390,8 @@ class TelegramUploader:
                     thumb =  await self.get_custom_thumb(tmdb_poster_url)
                     LOGGER.info("Got the poster")
 
-                if is_video and thumb is None:
-                    thumb = await get_video_thumbnail(self._up_path, None)
+                if is_video:
+                    s_thumb = await get_video_thumbnail(self._up_path, None)
 
                 if self._listener.thumbnail_layout:
                     ss_thumb = await get_multiple_frames_thumbnail(
@@ -486,7 +486,7 @@ class TelegramUploader:
                     imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
                     screenshot = await imgbb_client.upload(file=ss_thumb)
                     await asyncio.sleep(3)
-                    thumbnail = await imgbb_client.upload(file=thumb)
+                    thumbnail = await imgbb_client.upload(file=s_thumb)
                     await imgbb_client.close()
 
                     # Store in MongoDB
