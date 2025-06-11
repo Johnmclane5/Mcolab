@@ -1,4 +1,9 @@
+import re
+from logging import getLogger
 from datetime import datetime, timezone
+
+LOGGER = getLogger(__name__)
+
 
 async def extract_file_info(message):
     """Extract file info from a Pyrogram message and remove extension from file name."""
@@ -38,5 +43,5 @@ async def remove_extension(caption):
         cleaned_caption = re.sub(r'\.mkv|\.mp4|\.webm', '', caption)
         return cleaned_caption
     except Exception as e:
-        logger.error(e)
+        LOGGER.error(e)
         return None

@@ -1,5 +1,6 @@
 import contextlib
 import imgbbpy
+import asyncio
 from PIL import Image
 from aioshutil import rmtree
 from asyncio import sleep
@@ -481,18 +482,23 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             file_info = await extract_file_info(cpy_msg)
             if self._listener.thumbnail_layout and ss_thumb:
-                imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                screenshot = await imgbb_client.upload(file=ss_thumb)
-                thumbnail = await imgbb_client.upload(file=thumb)
-                await imgbb_client.close()
+                try:
+                    imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                    screenshot = await imgbb_client.upload(file=ss_thumb)
+                    await asyncio.sleep(3)
+                    thumbnail = await imgbb_client.upload(file=thumb)
+                    await imgbb_client.close()
 
-                # Store in MongoDB
-                post_doc = {
-                    "ss_url": screenshot.url,
-                    "thumb_url": thumbnail.url,
-                    **file_info,
-                }
-                await db["n_files"].insert_one(post_doc)
+                    # Store in MongoDB
+                    post_doc = {
+                        "ss_url": screenshot.url,
+                        "thumb_url": thumbnail.url,
+                        **file_info,
+                    }
+                    await db["n_files"].insert_one(post_doc)
+                except Exception as e:
+                    LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
+                    await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
                 
             if (
                 not self._listener.is_cancelled
