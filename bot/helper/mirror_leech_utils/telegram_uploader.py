@@ -494,18 +494,19 @@ class TelegramUploader:
             file_info = await extract_file_info(cpy_msg)
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
-                    async with imgbbpy.AsyncClient(Config.IMGBB_API_KEY) as imgbb_client:
-                        screenshot = await imgbb_client.upload(file=ss_thumb)
-                        await asyncio.sleep(3)
-                        thumbnail = await imgbb_client.upload(file=s_thumb)
+                    imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                    screenshot = await imgbb_client.upload(file=ss_thumb)
+                    await asyncio.sleep(3)
+                    thumbnail = await imgbb_client.upload(file=s_thumb)
+                    await imgbb_client.close()
 
-                        # Store in MongoDB
-                        post_doc = {
+                    # Store in MongoDB
+                    post_doc = {
                             "ss_url": screenshot.url,
                             "thumb_url": thumbnail.url,
                             **file_info,
                         }
-                        await db["n_files"].insert_one(post_doc)
+                    await db["n_files"].insert_one(post_doc)
                 except Exception as e:
                     LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
                     await self.cancel_task()
