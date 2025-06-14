@@ -42,7 +42,7 @@ from ..ext_utils.media_utils import (
     get_multiple_frames_thumbnail,
 )
 from motor.motor_asyncio import AsyncIOMotorClient 
-from ..ext_utils.extras import extract_file_info
+from ..ext_utils.extras import extract_file_info, remove_extension
 
 LOGGER = getLogger(__name__)
 
@@ -259,6 +259,17 @@ class TelegramUploader:
                 if not await aiopath.exists(self._up_path):
                     LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
                     continue
+
+                # --- Check if file name exists in DB ---
+                if db is not None:
+                    no_ext = await remove_extension(file_)
+                    existing = await db["n_files"].find_one({"file_name": no_ext})
+                    if existing:
+                        LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
+                        await self.cancel_task()
+                        return
+                # --- End check ---
+
                 try:
                     f_size = await aiopath.getsize(self._up_path)
                     self._total_files += 1
