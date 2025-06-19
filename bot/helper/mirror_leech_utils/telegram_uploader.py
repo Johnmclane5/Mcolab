@@ -1,4 +1,5 @@
 import contextlib
+import imgbbpy
 import asyncio
 from PIL import Image
 from aioshutil import rmtree
@@ -40,8 +41,17 @@ from ..ext_utils.media_utils import (
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
 )
+from motor.motor_asyncio import AsyncIOMotorClient 
+from ..ext_utils.extras import extract_file_info, remove_extension
 
 LOGGER = getLogger(__name__)
+
+try:
+    mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
+    db = mongo_client['bot4index']
+except Exception as e:
+    LOGGER.error(f"Failed to connect to MongoDB: {e}")
+    db = None
 
 class TelegramUploader:
     def __init__(self, listener, path):
@@ -250,6 +260,16 @@ class TelegramUploader:
                     LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
                     continue
 
+                # --- Check if file name exists in DB ---
+                if db is not None:
+                    no_ext = await remove_extension(file_)
+                    existing = await db["n_files"].find_one({"file_name": no_ext})
+                    if existing:
+                        LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
+                        await self.cancel_task()
+                        return
+                # --- End check ---
+
                 try:
                     f_size = await aiopath.getsize(self._up_path)
                     self._total_files += 1
@@ -381,11 +401,11 @@ class TelegramUploader:
                     thumb =  await self.get_custom_thumb(tmdb_poster_url)
                     LOGGER.info("Got the poster")
 
-                if is_video and thumb is None:
-                    thumb = await get_video_thumbnail(self._up_path, None)
+                if is_video and self._listener.thumbnail_layout:
+                    s_thumb = await get_video_thumbnail(self._up_path, None)
 
                 if self._listener.thumbnail_layout:
-                    thumb = await get_multiple_frames_thumbnail(
+                    ss_thumb = await get_multiple_frames_thumbnail(
                     self._up_path,
                     self._listener.thumbnail_layout,
                     self._listener.screen_shots,
@@ -471,6 +491,28 @@ class TelegramUploader:
                 )
 
             cpy_msg = await self._copy_message()
+            file_info = await extract_file_info(cpy_msg)
+            if self._listener.thumbnail_layout and ss_thumb:
+                try:
+                    file_info = await extract_file_info(cpy_msg)
+                    if file_info:
+                        imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                        screenshot = await imgbb_client.upload(file=ss_thumb)
+                        await asyncio.sleep(3)
+                        thumbnail = await imgbb_client.upload(file=s_thumb)
+                        await imgbb_client.close()
+
+                        # Store in MongoDB
+                        post_doc = {
+                            "ss_url": screenshot.url,
+                            "thumb_url": thumbnail.url,
+                            **file_info,
+                        }
+                        await db["n_files"].insert_one(post_doc)
+                except Exception as e:
+                    LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
+                    await self.cancel_task()
+                    await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
 
             if (
                 not self._listener.is_cancelled
