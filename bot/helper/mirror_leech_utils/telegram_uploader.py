@@ -491,7 +491,6 @@ class TelegramUploader:
                 )
 
             cpy_msg = await self._copy_message()
-            file_info = await extract_file_info(cpy_msg)
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
                     file_info = await extract_file_info(cpy_msg)
