@@ -110,6 +110,7 @@ class Mirror(TaskListener):
             "-ns": "",
             "-tl": "",
             "-ff": set(),
+            "-sf": False,
         }
 
         arg_parser(input_list[1:], args)
