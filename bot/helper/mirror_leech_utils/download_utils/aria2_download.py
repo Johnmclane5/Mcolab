@@ -72,18 +72,7 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time, select_f
             await send_status_message(listener.message)
     else:
         LOGGER.info(f"Aria2Download started: {name}. Gid: {gid}")
-        # Show files in torrent only after metadata is available
-        if "bittorrent" in download and "files" in download:
-            if not is_metadata(download):
-                files = download["files"]
-                file_list = "\n".join([
-                    f"{f.get('index', i+1)}: {f.get('path', '')}" for i, f in enumerate(files)
-                ])
-                msg = f"Files in torrent:\n{file_list}\n\nReply with the index numbers of the files you want to select."
-                await send_message(listener.message, msg)
-            else:
-                await send_message(listener.message, "Fetching metadata, please wait...")
-
+        
     await listener.on_download_start()
 
     if (
