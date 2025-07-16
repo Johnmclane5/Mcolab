@@ -378,10 +378,18 @@ async def leech(client, message):
 def parse_select_file_arg(text: str):
     """
     Parse the -sf argument to extract selected file indices.
-    Example supported formats: -sf 1,3,5 or --select-file 2,4
+    Supports formats: -sf 1,3,5 or --select-file 2,4 or -sf 1-9 or -sf 1,3-5,7
     Returns: Comma-separated string of indices, or None
     """
-    match = re.search(r'-(?:sf|select-file)\s+([0-9,]+)', text)
-    if match:
-        return match.group(1)
-    return None
+    match = re.search(r'-(?:sf|select-file)\s+([0-9,\-\s]+)', text)
+    if not match:
+        return None
+    indices_str = match.group(1).replace(' ', '')
+    indices = []
+    for part in indices_str.split(','):
+        if '-' in part:
+            start, end = part.split('-')
+            indices.extend(str(i) for i in range(int(start), int(end) + 1))
+        elif part.isdigit():
+            indices.append(part)
+    return ','.join(indices) if indices else None

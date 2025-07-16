@@ -14,7 +14,7 @@ from ...telegram_helper.message_utils import send_status_message, send_message
 
 
 async def add_aria2_download(listener, dpath, header, ratio, seed_time, select_file_indices=None):
-    a2c_opt = {"dir": dpath, "file-allocation": "none"}
+    a2c_opt = {"dir": dpath}
     if listener.name:
         a2c_opt["out"] = listener.name
     if header:
