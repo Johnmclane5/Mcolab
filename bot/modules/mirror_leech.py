@@ -1,7 +1,5 @@
 import re
-import os
 from aiofiles.os import path as aiopath
-from aiofiles import open as aiopen
 from base64 import b64encode
 from re import match as re_match
 
@@ -39,7 +37,6 @@ from ..helper.mirror_leech_utils.download_utils.telegram_download import (
     TelegramDownloadHelper,
 )
 from ..helper.telegram_helper.message_utils import send_message, get_tg_link_message
-from ..core.torrent_manager import TorrentManager
 
 
 class Mirror(TaskListener):
@@ -111,59 +108,10 @@ class Mirror(TaskListener):
             "-ns": "",
             "-tl": "",
             "-ff": set(),
-            "-sf": False,
         }
 
         arg_parser(input_list[1:], args)
-        self.show_files = args["-sf"]
 
-        # --- Show files logic (stop after showing) ---
-        if self.show_files:
-            import os
-
-            file_list = []
-            safe_dir = "/dev/shm" if os.path.exists("/dev/shm") else "/tmp"
-
-            a2c_opt = {
-                "pause-metadata": "true",
-                "dir": safe_dir,
-                "follow-torrent": "mem",
-                "allow-overwrite": "true",
-                "always-resume": "false"
-            }
-
-            try:
-                if self.link.endswith(".torrent") and await aiopath.exists(self.link):
-                    async with aiopen(self.link, "rb") as tf:
-                        torrent = await tf.read()
-                    encoded = b64encode(torrent).decode()
-                    params = [encoded, [], a2c_opt]
-                    gid = await TorrentManager.aria2.jsonrpc("addTorrent", params)
-                elif is_magnet(self.link):
-                    gid = await TorrentManager.aria2.addUri(uris=[self.link], options=a2c_opt)
-                else:
-                    gid = None
-
-                if gid:
-                    info = await TorrentManager.aria2.tellStatus(gid, keys=["files"])
-                    file_list = [f['path'] for f in info.get('files', [])]
-                    await TorrentManager.aria2.remove(gid)
-                    await TorrentManager.aria2.removeDownloadResult(gid)
-
-                if file_list:
-                    msg = "**Torrent File List:**\n"
-                    for idx, f in enumerate(file_list, 1):
-                        msg += f"`{idx}`: {f}\n"
-                    msg += "\nReply with `-sf <indices>` to select files (e.g., `-sf 1,3,5`)"
-                    await send_message(self.message, msg)
-                else:
-                    await send_message(self.message, "Could not fetch file list.")
-            except Exception as e:
-                await send_message(self.message, f"Error while showing files: {e}")
-
-            await self.remove_from_same_dir()
-            return
-        
         self.select = args["-s"]
         self.seed = args["-d"]
         self.name = args["-n"]
@@ -417,6 +365,7 @@ class Mirror(TaskListener):
                     f" authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
                 )
             await add_aria2_download(self, path, headers, ratio, seed_time, select_file_indices)
+
 
 async def mirror(client, message):
     bot_loop.create_task(Mirror(client, message).new_event())
