@@ -128,7 +128,9 @@ class Mirror(TaskListener):
                 a2c_opt = {
                             "pause-metadata": "true",
                             "dir": safe_dir,  # safe for low-storage environments
-                            "stream-piece-selector": "inorder"
+                            "follow-torrent": "mem",
+                            "allow-overwrite": "true",
+                            "always-resume": "false",
                 }
 
                 if await aiopath.exists(self.link):
