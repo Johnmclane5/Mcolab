@@ -13,7 +13,7 @@ from ...mirror_leech_utils.status_utils.aria2_status import Aria2Status
 from ...telegram_helper.message_utils import send_status_message, send_message
 
 
-async def add_aria2_download(listener, dpath, header, ratio, seed_time):
+async def add_aria2_download(listener, dpath, header, ratio, seed_time, select_file_indices=None):
     a2c_opt = {"dir": dpath}
     if listener.name:
         a2c_opt["out"] = listener.name
@@ -25,6 +25,8 @@ async def add_aria2_download(listener, dpath, header, ratio, seed_time):
         a2c_opt["seed-time"] = seed_time
     if TORRENT_TIMEOUT := Config.TORRENT_TIMEOUT:
         a2c_opt["bt-stop-timeout"] = f"{TORRENT_TIMEOUT}"
+    if select_file_indices:
+        a2c_opt["select-file"] = select_file_indices  # <-- Add select-file option
 
     add_to_queue, event = await check_running_tasks(listener)
     if add_to_queue:

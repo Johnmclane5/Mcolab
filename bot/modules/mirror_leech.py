@@ -1,3 +1,4 @@
+import re
 from aiofiles.os import path as aiopath
 from base64 import b64encode
 from re import match as re_match
@@ -71,6 +72,7 @@ class Mirror(TaskListener):
     async def new_event(self):
         text = self.message.text.split("\n")
         input_list = text[0].split(" ")
+        select_file_indices = parse_select_file_arg(self.message.text)
 
         args = {
             "-doc": False,
@@ -362,7 +364,7 @@ class Mirror(TaskListener):
                 headers += (
                     f" authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
                 )
-            await add_aria2_download(self, path, headers, ratio, seed_time)
+            await add_aria2_download(self, path, headers, ratio, seed_time, select_file_indices)
 
 
 async def mirror(client, message):
@@ -372,3 +374,14 @@ async def mirror(client, message):
 async def leech(client, message):
     bot_loop.create_task(Mirror(client, message, is_leech=True).new_event())
 
+
+def parse_select_file_arg(text: str):
+    """
+    Parse the -sf argument to extract selected file indices.
+    Example supported formats: -sf 1,3,5 or --select-file 2,4
+    Returns: Comma-separated string of indices, or None
+    """
+    match = re.search(r'-(?:sf|select-file)\s+([0-9,]+)', text)
+    if match:
+        return match.group(1)
+    return None
