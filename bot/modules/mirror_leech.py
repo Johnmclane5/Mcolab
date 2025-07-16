@@ -123,7 +123,12 @@ class Mirror(TaskListener):
                 (self.link.endswith(".torrent") and await aiopath.exists(self.link))
                 or is_magnet(self.link)
             ):
-                a2c_opt = {"pause-metadata": "true"}
+                a2c_opt = {
+                            "pause-metadata": "true",
+                            "dir": "/dev/shm",  # safe for low-storage environments
+                            "stream-piece-selector": "inorder"
+                }
+
                 if await aiopath.exists(self.link):
                     # For .torrent file, read and send as base64
                     async with aiopen(self.link, "rb") as tf:
