@@ -119,41 +119,48 @@ class Mirror(TaskListener):
 
         # --- Show files logic (stop after showing) ---
         if self.show_files:
-            file_list = []
-            if (
-                (self.link.endswith(".torrent") and await aiopath.exists(self.link))
-                or is_magnet(self.link)
-            ):  
-                safe_dir = "/dev/shm" if os.path.exists("/dev/shm") else "/tmp"
-                a2c_opt = {
-                            "pause-metadata": "true",
-                            "dir": safe_dir,  # safe for low-storage environments
-                            "follow-torrent": "mem",
-                            "allow-overwrite": "true",
-                            "always-resume": "false",
-                }
+            import os
 
-                if await aiopath.exists(self.link):
-                    # For .torrent file, read and send as base64
+            file_list = []
+            safe_dir = "/dev/shm" if os.path.exists("/dev/shm") else "/tmp"
+
+            a2c_opt = {
+                "pause-metadata": "true",
+                "dir": safe_dir,
+                "follow-torrent": "mem",
+                "allow-overwrite": "true",
+                "always-resume": "false"
+            }
+
+            try:
+                if self.link.endswith(".torrent") and await aiopath.exists(self.link):
                     async with aiopen(self.link, "rb") as tf:
                         torrent = await tf.read()
                     encoded = b64encode(torrent).decode()
                     params = [encoded, [], a2c_opt]
                     gid = await TorrentManager.aria2.jsonrpc("addTorrent", params)
-                else:
-                    # For magnet link
+                elif is_magnet(self.link):
                     gid = await TorrentManager.aria2.addUri(uris=[self.link], options=a2c_opt)
-                info = await TorrentManager.aria2.tellStatus(gid, keys=["files"])
-                file_list = [f['path'] for f in info.get('files', [])]
-                await TorrentManager.aria2.remove(gid)
-            if file_list:
-                msg = "**Torrent File List:**\n"
-                for idx, f in enumerate(file_list, 1):
-                    msg += f"`{idx}`: {f}\n"
-                msg += "\nReply with `-sf <indices>` to select files (e.g., `-sf 1,3,5`)"
-                await send_message(self.message, msg)
-            else:
-                await send_message(self.message, "Could not fetch file list.")
+                else:
+                    gid = None
+
+                if gid:
+                    info = await TorrentManager.aria2.tellStatus(gid, keys=["files"])
+                    file_list = [f['path'] for f in info.get('files', [])]
+                    await TorrentManager.aria2.remove(gid)
+                    await TorrentManager.aria2.removeDownloadResult(gid)
+
+                if file_list:
+                    msg = "**Torrent File List:**\n"
+                    for idx, f in enumerate(file_list, 1):
+                        msg += f"`{idx}`: {f}\n"
+                    msg += "\nReply with `-sf <indices>` to select files (e.g., `-sf 1,3,5`)"
+                    await send_message(self.message, msg)
+                else:
+                    await send_message(self.message, "Could not fetch file list.")
+            except Exception as e:
+                await send_message(self.message, f"Error while showing files: {e}")
+
             await self.remove_from_same_dir()
             return
         
