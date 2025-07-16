@@ -1,4 +1,5 @@
 import re
+import os
 from aiofiles.os import path as aiopath
 from aiofiles import open as aiopen
 from base64 import b64encode
@@ -122,10 +123,11 @@ class Mirror(TaskListener):
             if (
                 (self.link.endswith(".torrent") and await aiopath.exists(self.link))
                 or is_magnet(self.link)
-            ):
+            ):  
+                safe_dir = "/dev/shm" if os.path.exists("/dev/shm") else "/tmp"
                 a2c_opt = {
                             "pause-metadata": "true",
-                            "dir": "/dev/shm",  # safe for low-storage environments
+                            "dir": safe_dir,  # safe for low-storage environments
                             "stream-piece-selector": "inorder"
                 }
 
