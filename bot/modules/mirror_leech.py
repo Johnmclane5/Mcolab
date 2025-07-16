@@ -1,5 +1,6 @@
 import re
 from aiofiles.os import path as aiopath
+from aiofiles import open as aiopen
 from base64 import b64encode
 from re import match as re_match
 
@@ -37,6 +38,7 @@ from ..helper.mirror_leech_utils.download_utils.telegram_download import (
     TelegramDownloadHelper,
 )
 from ..helper.telegram_helper.message_utils import send_message, get_tg_link_message
+from ..core.torrent_manager import TorrentManager
 
 
 class Mirror(TaskListener):
@@ -366,6 +368,39 @@ class Mirror(TaskListener):
                 )
             await add_aria2_download(self, path, headers, ratio, seed_time, select_file_indices)
 
+        self.show_files = args["-sf"]  # Add this line after arg_parser
+
+        # --- Show files logic ---
+        if self.show_files:
+            file_list = []
+            if (
+                (self.link.endswith(".torrent") and await aiopath.exists(self.link))
+                or is_magnet(self.link)
+            ):
+                a2c_opt = {"pause-metadata": "true"}
+                if await aiopath.exists(self.link):
+                    # For .torrent file, read and send as base64
+                    async with aiopen(self.link, "rb") as tf:
+                        torrent = await tf.read()
+                    encoded = b64encode(torrent).decode()
+                    params = [encoded, [], a2c_opt]
+                    gid = await TorrentManager.aria2.jsonrpc("addTorrent", params)
+                else:
+                    # For magnet link
+                    gid = await TorrentManager.aria2.addUri(uris=[self.link], options=a2c_opt)
+                info = await TorrentManager.aria2.tellStatus(gid, keys=["files"])
+                file_list = [f['path'] for f in info.get('files', [])]
+                await TorrentManager.aria2.remove(gid)
+            if file_list:
+                msg = "**Torrent File List:**\n"
+                for idx, f in enumerate(file_list, 1):
+                    msg += f"`{idx}`: {f}\n"
+                msg += "\nReply with `-sf <indices>` to select files (e.g., `-sf 1,3,5`)"
+                await send_message(self.message, msg)
+            else:
+                await send_message(self.message, "Could not fetch file list.")
+            await self.remove_from_same_dir()
+            return
 
 async def mirror(client, message):
     bot_loop.create_task(Mirror(client, message).new_event())
