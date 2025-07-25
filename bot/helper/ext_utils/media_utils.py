@@ -773,12 +773,12 @@ class FFMpeg:
                 "-i", os.path.join(folder_path, 'filelist.txt'),
                 "-c", "copy",
                 '-map', '0:v',  
-                output_path
             ]
             if Config.AUDIO:
-                cmd += ['-map', f'{Config.AUDIO}']
+                cmd += ['-map', f'{Config.AUDIO}',]
             if Config.SUBTITLE:
-                cmd += ['-map', f'{Config.SUBTITLE}'] 
+                cmd += ['-map', f'{Config.SUBTITLE}',] 
+                cmd += [output_path]
             
         if mp4_file:
 
