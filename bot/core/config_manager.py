@@ -65,6 +65,8 @@ class Config:
     USE_SERVICE_ACCOUNTS = False
     WEB_PINCODE = False
     YT_DLP_OPTIONS = {}
+    MAP_AUDIO = ""
+    MAP_SUBTITLE = ""
 
     @classmethod
     def get(cls, key):

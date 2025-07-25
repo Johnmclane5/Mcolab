@@ -17,6 +17,8 @@ from ... import LOGGER, cpu_no, DOWNLOAD_DIR
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
+from ...core.config_manager import Config
+
 
 
 async def create_thumb(msg, _id=""):
@@ -771,11 +773,13 @@ class FFMpeg:
                 "-i", os.path.join(folder_path, 'filelist.txt'),
                 "-c", "copy",
                 '-map', '0:v',  
-                '-map', '0:a',
-                '-map', '0:s',
                 output_path
             ]
-
+            if Config.AUDIO:
+                cmd += ['-map', f'{Config.AUDIO}']
+            if Config.SUBTITLE:
+                cmd += ['-map', f'{Config.SUBTITLE}'] 
+            
         if mp4_file:
 
             cmd = [
