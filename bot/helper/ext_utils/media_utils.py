@@ -17,7 +17,6 @@ from ... import LOGGER, cpu_no, DOWNLOAD_DIR
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
-from ...core.config_manager import Config
 
 
 
@@ -772,13 +771,11 @@ class FFMpeg:
                 "-safe", "0",
                 "-i", os.path.join(folder_path, 'filelist.txt'),
                 "-c", "copy",
-                '-map', '0:v',  
+                '-map', '0:v',
+                '-map', '0:a?',      # Optional audio
+                '-map', '0:s?',      # Optional subtitles
+                output_path
             ]
-            if Config.AUDIO:
-                cmd += ['-map', f'{Config.AUDIO}',]
-            if Config.SUBTITLE:
-                cmd += ['-map', f'{Config.SUBTITLE}',] 
-                cmd += [output_path]
             
         if mp4_file:
 
