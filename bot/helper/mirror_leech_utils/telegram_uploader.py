@@ -48,7 +48,7 @@ LOGGER = getLogger(__name__)
 
 try:
     mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
-    db = mongo_client['bot4index']
+    db = mongo_client['sharing_bot']
 except Exception as e:
     LOGGER.error(f"Failed to connect to MongoDB: {e}")
     db = None
@@ -263,7 +263,7 @@ class TelegramUploader:
                 # --- Check if file name exists in DB ---
                 if db is not None:
                     no_ext = await remove_extension(file_)
-                    existing = await db["n_files"].find_one({"file_name": no_ext})
+                    existing = await db["files"].find_one({"file_name": no_ext})
                     if existing:
                         LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
                         await self.cancel_task()
@@ -402,7 +402,7 @@ class TelegramUploader:
                     LOGGER.info("Got the poster")
 
                 if is_video and self._listener.thumbnail_layout:
-                    s_thumb = await get_video_thumbnail(self._up_path, None)
+                    thumb = await get_video_thumbnail(self._up_path, None)
 
                 if self._listener.thumbnail_layout:
                     ss_thumb = await get_multiple_frames_thumbnail(
@@ -493,21 +493,23 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
-                    file_info = await extract_file_info(cpy_msg)
-                    if file_info:
+                    if cpy_msg:
+                        f_name = await remove_extension(cpy_msg.caption)
                         imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
                         screenshot = await imgbb_client.upload(file=ss_thumb)
-                        await asyncio.sleep(3)
-                        thumbnail = await imgbb_client.upload(file=s_thumb)
                         await imgbb_client.close()
 
                         # Store in MongoDB
                         post_doc = {
-                            "ss_url": screenshot.url,
-                            "thumb_url": thumbnail.url,
-                            **file_info,
+                            "url": screenshot.url,
+                            "name": f_name       
                         }
-                        await db["n_files"].insert_one(post_doc)
+                        await db["imgbb"].insert_one(post_doc)
+                        TgClient.bot.send_photo(
+                            chat_id=Config.SSCHAT_ID,
+                            photo=screenshot.url,
+                            caption=f"<b>{f_name}</b>"
+                        )
                 except Exception as e:
                     LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
                     await self.cancel_task()
