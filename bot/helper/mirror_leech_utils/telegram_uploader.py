@@ -508,7 +508,7 @@ class TelegramUploader:
                         TgClient.bot.send_photo(
                             chat_id=Config.SSCHAT_ID,
                             photo=screenshot.url,
-                            caption=f"<b>{f_name}</b>"
+                            caption=f"{f_name}"
                         )
                 except Exception as e:
                     LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
