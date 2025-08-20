@@ -505,7 +505,7 @@ class TelegramUploader:
                             "name": f_name       
                         }
                         await db["imgbb"].insert_one(post_doc)
-                        TgClient.bot.send_photo(
+                        await TgClient.bot.send_photo(
                             chat_id=Config.SSCHAT_ID,
                             photo=screenshot.url,
                             caption=f"{f_name}"
