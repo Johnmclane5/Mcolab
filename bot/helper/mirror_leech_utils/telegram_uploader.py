@@ -46,13 +46,6 @@ from ..ext_utils.extras import extract_file_info, remove_extension
 
 LOGGER = getLogger(__name__)
 
-try:
-    mongo_client = AsyncIOMotorClient(Config.DB_URL)  # Use AsyncIOMotorClient
-    db = mongo_client['sharing_bot']
-except Exception as e:
-    LOGGER.error(f"Failed to connect to MongoDB: {e}")
-    db = None
-
 class TelegramUploader:
     def __init__(self, listener, path):
         self._last_uploaded = 0
@@ -259,16 +252,6 @@ class TelegramUploader:
                 if not await aiopath.exists(self._up_path):
                     LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
                     continue
-
-                # --- Check if file name exists in DB ---
-                if db is not None:
-                    no_ext = await remove_extension(file_)
-                    existing = await db["files"].find_one({"file_name": no_ext})
-                    if existing:
-                        LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
-                        await self.cancel_task()
-                        return
-                # --- End check ---
 
                 try:
                     f_size = await aiopath.getsize(self._up_path)
@@ -495,19 +478,9 @@ class TelegramUploader:
                 try:
                     if cpy_msg:
                         f_name = await remove_extension(cpy_msg.caption)
-                        imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                        screenshot = await imgbb_client.upload(file=ss_thumb)
-                        await imgbb_client.close()
-
-                        # Store in MongoDB
-                        post_doc = {
-                            "url": screenshot.url,
-                            "name": f_name       
-                        }
-                        await db["imgbb"].insert_one(post_doc)
                         await TgClient.bot.send_photo(
                             chat_id=Config.SSCHAT_ID,
-                            photo=screenshot.url,
+                            photo=ss_thumb,
                             caption=f"{f_name}"
                         )
                 except Exception as e:
