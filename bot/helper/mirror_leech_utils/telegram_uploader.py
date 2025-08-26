@@ -479,13 +479,12 @@ class TelegramUploader:
                     if cpy_msg:
                         f_name = await remove_extension(cpy_msg.caption)
                         await TgClient.bot.send_photo(
-                            chat_id=Config.SSCHAT_ID,
+                            chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
                             caption=f"{f_name}"
                         )
                 except Exception as e:
-                    LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
-                    await self.cancel_task()
+                    LOGGER.error(f"Error sending ss: {e}")
                     await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
 
             if (
