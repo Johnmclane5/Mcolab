@@ -476,7 +476,7 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
-                    f_name = await remove_extension(self._send_msg.caption)
+                    f_name = await remove_extension(ospath.splitext(file)[0])
                     await TgClient.bot.send_photo(
                             chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
