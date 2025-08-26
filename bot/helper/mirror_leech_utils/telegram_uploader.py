@@ -387,7 +387,7 @@ class TelegramUploader:
                 if is_video and thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, None)
 
-                if self._listener.thumbnail_layout:
+                if is_video and self._listener.thumbnail_layout:
                     ss_thumb = await get_multiple_frames_thumbnail(
                     self._up_path,
                     self._listener.thumbnail_layout,
@@ -476,9 +476,8 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
-                    if cpy_msg:
-                        f_name = await remove_extension(cpy_msg.caption)
-                        await TgClient.bot.send_photo(
+                    f_name = await remove_extension(self._send_msg.caption)
+                    await TgClient.bot.send_photo(
                             chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
                             caption=f"{f_name}"
