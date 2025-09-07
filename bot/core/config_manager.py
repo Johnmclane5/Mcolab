@@ -14,7 +14,6 @@ class Config:
     EXCLUDED_EXTENSIONS = ""
     FFMPEG_CMDS = {}
     FILELION_API = ""
-    TMDB_API_KEY = ""
     GDRIVE_ID = ""
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""

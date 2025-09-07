@@ -1,6 +1,6 @@
 import contextlib
-import imgbbpy
-import asyncio
+import aiohttp
+import PTN
 from PIL import Image
 from aioshutil import rmtree
 from asyncio import sleep
@@ -31,7 +31,7 @@ from tenacity import (
 
 from ...core.config_manager import Config
 from ...core.mltb_client import TgClient
-from ..ext_utils.bot_utils import sync_to_async, extract_movie_info, get_movie_poster, humanbytes, download_image_url
+from ..ext_utils.bot_utils import sync_to_async, download_image_url
 from ..ext_utils.files_utils import is_archive, get_base_name
 from ..telegram_helper.message_utils import delete_message
 from ..ext_utils.media_utils import (
@@ -41,8 +41,7 @@ from ..ext_utils.media_utils import (
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
 )
-from motor.motor_asyncio import AsyncIOMotorClient 
-from ..ext_utils.extras import extract_file_info, remove_extension
+from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster
 
 LOGGER = getLogger(__name__)
 
@@ -358,13 +357,20 @@ class TelegramUploader:
         try:
             is_video, is_audio, is_image = await get_document_type(self._up_path)
             ss_thumb = None
+            tmdb_poster_url = None
 
-            movie_name, release_year = await extract_movie_info(ospath.splitext(file)[0])
-                            
-            if Config.TMDB_API_KEY:
-                tmdb_poster_url = await get_movie_poster(movie_name, release_year)
-            else:
-                tmdb_poster_url = None
+            if Config.TMDB_API_KEY and is_video:
+                title = remove_redandent(ospath.splitext(file)[0])
+                parsed_data = PTN.parse(title)
+                title = parsed_data.get("title", "").replace("_", " ").replace("-", " ").replace(":", " ")
+                title = ' '.join(title.split())
+                year = parsed_data.get("year")
+                season = parsed_data.get("season")
+
+                if season:
+                    tmdb_poster_url = await get_tv_poster(title, year)
+                else:
+                    tmdb_poster_url = await get_movie_poster(title, year)
 
             if not is_image and thumb is None:
                 file_name = ospath.splitext(file)[0]
@@ -473,7 +479,8 @@ class TelegramUploader:
                     progress=self._upload_progress,
                 )
 
-            cpy_msg = await self._copy_message()
+            await self._copy_message()
+
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
                     f_name = await remove_extension(ospath.splitext(file)[0])
@@ -483,8 +490,8 @@ class TelegramUploader:
                             caption=f"{f_name}"
                         )
                 except Exception as e:
-                    LOGGER.error(f"Error sending ss: {e}")
-                    await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
+                    LOGGER.error(f"Error in SS gen: {e}")
+                    await self._sent_msg.reply_text(f"Error in SS gen: {e}")
 
             if (
                 not self._listener.is_cancelled
@@ -580,3 +587,4 @@ class TelegramUploader:
         self._listener.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self._listener.name}")
         await self._listener.on_upload_error("your upload has been stopped!")
+
