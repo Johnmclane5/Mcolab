@@ -431,6 +431,9 @@ async def set_option(_, message, option):
 
 
 async def get_menu(option, message, user_id):
+    if option == "USER_DUMP":
+        await show_user_dump_menu(message, user_id)
+        return
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
     buttons = ButtonMaker()
