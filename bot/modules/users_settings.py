@@ -392,16 +392,19 @@ async def remove_one(_, message, option):
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
     names = message.text.split("/")
+    removed_ids = set()
     # Remove channels
     for name in names:
         if name in user_dict[option]:
-            # If this channel is active, remove ACTIVE_USER_DUMP
-            if (
-                "ACTIVE_USER_DUMP" in user_dict
-                and user_dict[option][name] == user_dict["ACTIVE_USER_DUMP"]
-            ):
-                del user_dict["ACTIVE_USER_DUMP"]
+            removed_ids.add(user_dict[option][name])
             del user_dict[option][name]
+    # Remove ACTIVE_USER_DUMP if its ID was removed or no channels left
+    if "ACTIVE_USER_DUMP" in user_dict:
+        if (
+            user_dict["ACTIVE_USER_DUMP"] in removed_ids
+            or user_dict["ACTIVE_USER_DUMP"] not in user_dict[option].values()
+        ):
+            del user_dict["ACTIVE_USER_DUMP"]
     await delete_message(message)
     await database.update_user_data(user_id)
 
