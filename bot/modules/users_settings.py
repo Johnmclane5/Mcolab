@@ -405,8 +405,10 @@ async def remove_one(_, message, option):
             or user_dict["ACTIVE_USER_DUMP"] not in user_dict[option].values()
         ):
             del user_dict["ACTIVE_USER_DUMP"]
+    print("Before DB update:", user_dict)  
     await delete_message(message)
     await database.update_user_data(user_id)
+    print("After DB update:", user_data.get(user_id, {}))
 
 
 @new_task
@@ -626,7 +628,7 @@ async def edit_user_settings(client, query):
         await query.answer(f"Selected channel ID: {data[3]}", show_alert=True)
         user_dict["ACTIVE_USER_DUMP"] = int(data[3])
         await database.update_user_data(user_id)
-        await send_message(message, f"Active User Dump set to channel ID: {data[3]}")
+        await query.answer(f"Active User Dump set to channel ID: {data[3]}", show_alert=True)
     else:
         await query.answer()
         await delete_message(message.reply_to_message)
