@@ -373,10 +373,10 @@ async def add_one(_, message, option):
     if value.startswith("{") and value.endswith("}"):
         try:
             value = eval(value)
-            if user_dict[option]:
-                user_dict[option].update(value)
-            else:
-                update_user_ldata(user_id, option, value)
+            # Ensure user_dict[option] is a dict
+            if option not in user_dict or not isinstance(user_dict[option], dict):
+                user_dict[option] = {}
+            user_dict[option].update(value)
         except Exception as e:
             await send_message(message, str(e))
             return
@@ -385,7 +385,6 @@ async def add_one(_, message, option):
         return
     await delete_message(message)
     await database.update_user_data(user_id)
-
 
 @new_task
 async def remove_one(_, message, option):
