@@ -47,6 +47,16 @@ async def remove_extension(caption):
         LOGGER.error(e)
         return None
     
+async def remove_unwanted(caption):
+    try:
+        # Match and keep everything up to and including the extension
+        match = re.match(r'^(.*?\.(mkv|mp4|webm))', caption, flags=re.IGNORECASE)
+        if match:
+            return match.group(1)
+        return caption  # Return original if no match
+    except Exception as e:
+        LOGGER.error(e)
+        return None
 
 async def get_movie_poster(movie_name, release_year=None):
     tmdb_search_url = f'https://api.themoviedb.org/3/search/movie?api_key={Config.TMDB_API_KEY}&query={movie_name}'
