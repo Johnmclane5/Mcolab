@@ -405,10 +405,8 @@ async def remove_one(_, message, option):
             or user_dict["ACTIVE_USER_DUMP"] not in user_dict[option].values()
         ):
             del user_dict["ACTIVE_USER_DUMP"]
-    print("Before DB update:", user_dict)  
     await delete_message(message)
     await database.update_user_data(user_id)
-    print("After DB update:", user_data.get(user_id, {}))
 
 
 @new_task

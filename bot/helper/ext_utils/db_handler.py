@@ -106,7 +106,18 @@ class DbManager:
         data = data.copy()
         for key in ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE"):
             data.pop(key, None)
-        await self.db.users.update_one({"_id": user_id}, {"$set": data}, upsert=True)
+        # Get current document from DB
+        doc = await self.db.users.find_one({"_id": user_id}) or {}
+        # Find keys to unset (present in DB but not in new data)
+        unset_keys = {k: "" for k in doc if k not in data and k != "_id"}
+        # Update DB: set new data and unset removed keys
+        update_query = {}
+        if data:
+            update_query["$set"] = data
+        if unset_keys:
+            update_query["$unset"] = unset_keys
+        if update_query:
+            await self.db.users.update_one({"_id": user_id}, update_query, upsert=True)
 
     async def update_user_doc(self, user_id, key, path=""):
         if self._return:
