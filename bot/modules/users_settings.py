@@ -654,10 +654,11 @@ async def get_users_settings(_, message):
 async def show_user_dump_menu(message, user_id):
     user_dict = user_data.get(user_id, {})
     dump_dict = user_dict.get("USER_DUMP", {})
-    buttons = ButtonMaker()
-    if not dump_dict:
+    # Ensure dump_dict is a dict
+    if not isinstance(dump_dict, dict) or not dump_dict:
         await send_message(message, "No User Dump channels set!")
         return
+    buttons = ButtonMaker()
     for name, cid in dump_dict.items():
         buttons.data_button(name, f"userset {user_id} selectdump {cid}")
     buttons.data_button("Back", f"userset {user_id} leech")
