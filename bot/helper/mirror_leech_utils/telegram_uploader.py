@@ -505,27 +505,28 @@ class TelegramUploader:
 
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
-                    f_name = await remove_extension(ospath.splitext(file)[0])
-                    imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                    screenshot = await imgbb_client.upload(file=ss_thumb)
-                    ss_url = screenshot.url
-                    await imgbb_client.close()
+                    if cpy_msg:
+                        f_name = await remove_extension(ospath.splitext(file)[0])
+                        imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                        screenshot = await imgbb_client.upload(file=ss_thumb)
+                        ss_url = screenshot.url
+                        await imgbb_client.close()
 
-                    file_info = extract_file_info(cpy_msg, channel_id=None)
-                    file_info["ss_url"] = ss_url
+                        file_info = extract_file_info(cpy_msg, channel_id=cpy_msg.chat.id)
+                        file_info["ss_url"] = ss_url
 
-                    # Store in MongoDB
-                    files_col.update_one({"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]}, 
+                        # Store in MongoDB
+                        await files_col.update_one({"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]}, 
                                          {"$set": file_info}, 
                                          upsert=True
                                         )
-                    LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
-                    if Config.SSCHAT_ID:
-                        await TgClient.bot.send_photo(
+                        LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
+                        if Config.SSCHAT_ID:
+                            await TgClient.bot.send_photo(
                             chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
                             caption=f"{f_name}"
-                        )
+                            )
                 except Exception as e:
                     LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
                     await self.cancel_task()
