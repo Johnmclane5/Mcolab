@@ -512,7 +512,7 @@ class TelegramUploader:
                         ss_url = screenshot.url
                         await imgbb_client.close()
 
-                        file_info = extract_file_info(cpy_msg, channel_id=cpy_msg.chat.id)
+                        file_info = await extract_file_info(cpy_msg, channel_id=cpy_msg.chat.id)
                         file_info["ss_url"] = ss_url
 
                         # Store in MongoDB

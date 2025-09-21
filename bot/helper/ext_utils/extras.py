@@ -104,7 +104,7 @@ async def get_tv_poster(tv_name, first_air_year=None):
         LOGGER.error(f"Error fetching TMDb TV by name: {e}")
         return
 
-def extract_file_info(message, channel_id=None):
+async def extract_file_info(message, channel_id=None):
     """Extract file info from a Pyrogram message."""
     caption_name = message.caption.strip() if message.caption else None
     file_info = {
@@ -131,5 +131,5 @@ def extract_file_info(message, channel_id=None):
         file_info["file_size"] = getattr(message.photo, "file_size", None)
         file_info["file_format"] = "image/jpeg"
     if file_info["file_name"]:
-        file_info["file_name"] = remove_extension(re.sub(r"[',]", "", file_info["file_name"].replace("&", "and")))
+        file_info["file_name"] = await remove_extension(re.sub(r"[',]", "", file_info["file_name"].replace("&", "and")))
     return file_info
