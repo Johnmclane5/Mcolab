@@ -34,3 +34,4 @@ uvloop
 xattr
 yt-dlp[default,curl-cffi]
 parse-torrent-title
+imgbbpy

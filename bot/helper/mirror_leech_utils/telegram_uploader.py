@@ -1,6 +1,7 @@
 import contextlib
 import aiohttp
 import PTN
+import imgbbpy
 from PIL import Image
 from aioshutil import rmtree
 from asyncio import sleep
@@ -41,9 +42,20 @@ from ..ext_utils.media_utils import (
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
 )
-from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster
+from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster, extract_file_info
+from motor.motor_asyncio import AsyncIOMotorClient 
+
 
 LOGGER = getLogger(__name__)
+
+try:
+    mongo_client = AsyncIOMotorClient(Config.IBB_URL)  # Use AsyncIOMotorClient
+    db = mongo_client['sharing_bot']
+    files_col = db['files']
+except Exception as e:
+    LOGGER.error(f"Failed to connect to MongoDB: {e}")
+    db = None
+    pass
 
 class TelegramUploader:
     def __init__(self, listener, path):
@@ -251,6 +263,16 @@ class TelegramUploader:
                 if not await aiopath.exists(self._up_path):
                     LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
                     continue
+
+                # --- Check if file name exists in DB ---
+                if db is not None:
+                    no_ext = await remove_extension(file_)
+                    existing = await db["files"].find_one({"file_name": no_ext})
+                    if existing:
+                        LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
+                        await self.cancel_task()
+                        return
+                # --- End check ---
 
                 try:
                     f_size = await aiopath.getsize(self._up_path)
@@ -479,19 +501,34 @@ class TelegramUploader:
                     progress=self._upload_progress,
                 )
 
-            await self._copy_message()
+            cpy_msg = await self._copy_message()
 
             if self._listener.thumbnail_layout and ss_thumb:
                 try:
                     f_name = await remove_extension(ospath.splitext(file)[0])
+                    imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                    screenshot = await imgbb_client.upload(file=ss_thumb)
+                    ss_url = screenshot.url
+                    await imgbb_client.close()
+
+                    file_info = extract_file_info(cpy_msg, channel_id=None)
+                    file_info["ss_url"] = ss_url
+
+                    # Store in MongoDB
+                    files_col.update_one({"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]}, 
+                                         {"$set": file_info}, 
+                                         upsert=True
+                                        )
+
                     await TgClient.bot.send_photo(
                             chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
                             caption=f"{f_name}"
                         )
                 except Exception as e:
-                    LOGGER.error(f"Error in SS gen: {e}")
-                    await self._sent_msg.reply_text(f"Error in SS gen: {e}")
+                    LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
+                    await self.cancel_task()
+                    await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
 
             if (
                 not self._listener.is_cancelled
