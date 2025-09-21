@@ -519,8 +519,9 @@ class TelegramUploader:
                                          {"$set": file_info}, 
                                          upsert=True
                                         )
-
-                    await TgClient.bot.send_photo(
+                    LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
+                    if Config.SSCHAT_ID:
+                        await TgClient.bot.send_photo(
                             chat_id=int(Config.SSCHAT_ID),
                             photo=ss_thumb,
                             caption=f"{f_name}"
