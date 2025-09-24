@@ -75,8 +75,10 @@ async def get_user_settings(from_user, stype="main"):
         )
         if user_dict.get("USER_DUMP", False):
             udump = user_dict["USER_DUMP"]
+            adump = user_dict["ACTIVE_USER_DUMP"]
         else:
             udump = "None"
+            adump = "None"
             
         buttons.data_button(
 
@@ -185,7 +187,8 @@ Equal Splits is <b>{equal_splits}</b>
 Media Group is <b>{media_group}</b>
 Leech Prefix is <code>{escape(lprefix)}</code>
 Leech Destination is <code>{leech_dest}</code>
-User dump <code>{udump}</code>
+User dumps <code>{udump}</code>
+Active dump <code>{adump}</code>
 Leech by <b>{leech_method}</b> session
 HYBRID Leech is <b>{hybrid_leech}</b>
 Thumbnail Layout is <b>{thumb_layout}</b>
