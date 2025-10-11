@@ -777,23 +777,33 @@ class FFMpeg:
                 output_path
             ]
             
-        if mp4_file:
-
+        if mp4_file and srt_file:
+            # Use MKV format for output and original video file name
+            original_video = mp4_file[0]
+            base_name, _ = os.path.splitext(original_video)
+            output_mkv = f"{base_name}.mkv"
             cmd = [
                 "ffmpeg",
                 "-hide_banner",
                 "-loglevel", "error",
-                '-i', mp4_file[0],
-                '-i', srt_file[-1],  
-                '-c:v', 'copy',  
-                '-c:a', 'copy',  
-                '-c:s', 'mov_text',  
-                '-map', '0:v',  
-                '-map', '0:a', 
-                '-map', '1',  
-                output_path
+                '-i', original_video,
             ]
+            # Add all subtitle files as inputs
+            for srt in srt_file:
+                cmd.extend(['-i', srt])
+            cmd.extend([
+                '-c:v', 'copy',
+                '-c:a', 'copy',
+                '-c:s', 'copy',
+            ])
+            # Map video and audio
+            cmd.extend(['-map', '0:v', '-map', '0:a'])
+            # Map all subtitle streams
+            for idx in range(1, len(srt_file) + 1):
+                cmd.extend(['-map', str(idx)])
+            cmd.append(output_mkv)
             LOGGER.info(f"{cmd}")
+            output_path = output_mkv
             
         if self._listener.is_cancelled:
             return False
