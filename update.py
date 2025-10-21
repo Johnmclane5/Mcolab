@@ -14,6 +14,8 @@ from os import path, remove
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from subprocess import run as srun
+from urllib.request import urlopen
+from os import getenv
 
 getLogger("pymongo").setLevel(ERROR)
 
@@ -29,6 +31,21 @@ basicConfig(
     handlers=[FileHandler("log.txt"), StreamHandler()],
     level=INFO,
 )
+
+
+
+CONFIG_FILE_URL = getenv("CONFIG_FILE_URL", "").strip()
+if CONFIG_FILE_URL:
+    try:
+        log_info("Downloading config.py from CONFIG_FILE_URL...")
+        with urlopen(CONFIG_FILE_URL) as response:
+            data = response.read().decode("utf-8")
+        with open("config.py", "w", encoding="utf-8") as f:
+            f.write(data)
+        log_info("config.py downloaded successfully.")
+    except Exception as e:
+        log_error(f"Failed to download config.py: {e}")
+        exit(1)
 
 settings = import_module("config")
 config_file = {
