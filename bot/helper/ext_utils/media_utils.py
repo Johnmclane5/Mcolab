@@ -745,7 +745,7 @@ class FFMpeg:
             "-i",
             video_file,
             "-map",
-            "0:s:m:language:eng",
+            "0:s:m:language:eng:0?",
             "-c:s",
             "srt",
             "-threads",

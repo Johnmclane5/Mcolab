@@ -88,18 +88,18 @@ ARCH_EXT = [
 ]
 
 VIDEO_SUFFIXES = (
-    "MPEG",
-    "MP4",
-    "MKV",
-    "MOV",
-    "AVI",
-    "3GP",
-    "MPG",
-    "WEBM",
-    "FLV",
-    "WMV",
-    "M4V",
-    "HEVC",
+    "mpeg",
+    "mp4",
+    "mkv",
+    "mov",
+    "avi",
+    "3gp",
+    "mpg",
+    "webm",
+    "flv",
+    "wmv",
+    "m4v",
+    "hevc",
 )
 
 FIRST_SPLIT_REGEX = (
