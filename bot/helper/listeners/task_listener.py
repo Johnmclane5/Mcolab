@@ -494,7 +494,8 @@ class TaskListener(TaskConfig):
             task_dict[self.mid] = TelegramStatus(self, None, gid, "st")
         if self.is_file:
             ffmpeg = FFMpeg(self)
-            await ffmpeg.extract_subtitles(path)
+            if await ffmpeg.extract_subtitles(path) and self.se_only:
+                await remove(path)
         else:
             async for dirpath, _, files in self.async_walk(path):
                 for file in files:
@@ -502,7 +503,8 @@ class TaskListener(TaskConfig):
                         continue
                     f_path = ospath.join(dirpath, file)
                     ffmpeg = FFMpeg(self)
-                    await ffmpeg.extract_subtitles(f_path)
+                    if await ffmpeg.extract_subtitles(f_path) and self.se_only:
+                        await remove(f_path)
                     if self.is_cancelled:
                         return
         return path
