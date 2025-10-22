@@ -87,6 +87,20 @@ ARCH_EXT = [
     ".crc64",
 ]
 
+VIDEO_SUFFIXES = (
+    "MPEG",
+    "MP4",
+    "MKV",
+    "MOV",
+    "AVI",
+    "3GP",
+    "MPG",
+    "WEBM",
+    "FLV",
+    "WMV",
+    "M4V",
+    "HEVC",
+)
 
 FIRST_SPLIT_REGEX = (
     r"\.part0*1\.rar$|\.7z\.0*1$|\.zip\.0*1$|^(?!.*\.part\d+\.rar$).*\.rar$"
