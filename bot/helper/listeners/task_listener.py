@@ -1,4 +1,5 @@
-from aiofiles.os import path as aiopath, listdir, makedirs, remove, walk
+import os
+from aiofiles.os import path as aiopath, listdir, makedirs, remove
 from os import path as ospath
 from aioshutil import move
 from asyncio import sleep, gather
@@ -481,6 +482,10 @@ class TaskListener(TaskConfig):
         if self.thumb and await aiopath.exists(self.thumb):
             await remove(self.thumb)
 
+    async def async_walk(self, path):
+        for root, dirs, files in await sync_to_async(os.walk, path):
+            yield root, dirs, files
+
     async def proceed_extract_subtitle(self, path, gid):
         LOGGER.info(f"Extracting subtitles from: {self.name}")
         async with task_dict_lock:
@@ -491,7 +496,7 @@ class TaskListener(TaskConfig):
             ffmpeg = FFMpeg(self)
             await ffmpeg.extract_subtitles(path)
         else:
-            async for dirpath, _, files in walk(path):
+            async for dirpath, _, files in self.async_walk(path):
                 for file in files:
                     if not file.lower().endswith(tuple(VIDEO_SUFFIXES)):
                         continue
