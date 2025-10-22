@@ -730,6 +730,52 @@ class FFMpeg:
             start_time += lpd - 3
             i += 1
         return True
+
+    async def extract_subtitles(self, video_file):
+        self.clear()
+        base_name = ospath.splitext(video_file)[0]
+        output_srt = f"{base_name}.srt"
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-progress",
+            "pipe:1",
+            "-i",
+            video_file,
+            "-map",
+            "0:s:m:language:eng",
+            "-c:s",
+            "srt",
+            "-threads",
+            f"{max(1, cpu_no // 2)}",
+            output_srt,
+        ]
+        if self._listener.is_cancelled:
+            return False
+        self._listener.subproc = await create_subprocess_exec(
+            *cmd, stdout=PIPE, stderr=PIPE
+        )
+        await self._ffmpeg_progress()
+        _, stderr = await self._listener.subproc.communicate()
+        code = self._listener.subproc.returncode
+        if self._listener.is_cancelled:
+            return False
+        if code == 0:
+            return True
+        elif code == -9:
+            self._listener.is_cancelled = True
+            return False
+        else:
+            try:
+                stderr = stderr.decode().strip()
+            except:
+                stderr = "Unable to decode the error!"
+            LOGGER.error(
+                f"{stderr}. Something went wrong while extracting subtitles. Path: {video_file}"
+            )
+        return False
     
 
     async def merge_videos(self, folder_path, output_path):

@@ -84,6 +84,7 @@ class Mirror(TaskListener):
             "-b": False,
             "-e": False,
             "-z": False,
+            "-se": False,
             "-sv": False,
             "-ss": False,
             "-f": False,
@@ -121,6 +122,7 @@ class Mirror(TaskListener):
         self.link = args["link"]
         self.compress = args["-z"]
         self.extract = args["-e"]
+        self.extract_subtitle = args["-se"]
         self.merge = args["-mv"]
         self.join = args["-j"]
         self.thumb = args["-t"]

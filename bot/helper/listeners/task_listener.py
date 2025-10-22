@@ -1,7 +1,9 @@
-from aiofiles.os import path as aiopath, listdir, makedirs, remove
+from aiofiles.os import path as aiopath, listdir, makedirs, remove, walk
+from os import path as ospath
 from aioshutil import move
 from asyncio import sleep, gather
 from html import escape
+from ..ext_utils.files_utils import VIDEO_SUFFIXES
 from requests import utils as rutils
 
 from ... import (
@@ -46,6 +48,7 @@ from ..telegram_helper.message_utils import (
     delete_status,
     update_status_message,
 )
+from ..ext_utils.media_utils import FFMpeg
 
 
 class TaskListener(TaskConfig):
@@ -204,6 +207,15 @@ class TaskListener(TaskConfig):
             self.size = await get_path_size(up_dir)
             self.clear()
             await remove_excluded_files(up_dir, self.excluded_extensions)
+
+        if self.extract_subtitle:
+            up_path = await self.proceed_extract_subtitle(up_path, gid)
+            if self.is_cancelled:
+                return
+            self.is_file = await aiopath.isfile(up_path)
+            self.name = up_path.replace(f"{up_dir}/", "").split("/", 1)[0]
+            self.size = await get_path_size(up_dir)
+            self.clear()
 
         if self.ffmpeg_cmds:
             up_path = await self.proceed_ffmpeg(
@@ -468,6 +480,27 @@ class TaskListener(TaskConfig):
             await clean_download(self.up_dir)
         if self.thumb and await aiopath.exists(self.thumb):
             await remove(self.thumb)
+
+    async def proceed_extract_subtitle(self, path, gid):
+        LOGGER.info(f"Extracting subtitles from: {self.name}")
+        async with task_dict_lock:
+            if self.is_cancelled:
+                return
+            task_dict[self.mid] = TelegramStatus(self, None, gid, "st")
+        if self.is_file:
+            ffmpeg = FFMpeg(self)
+            await ffmpeg.extract_subtitles(path)
+        else:
+            async for dirpath, _, files in walk(path):
+                for file in files:
+                    if not file.lower().endswith(tuple(VIDEO_SUFFIXES)):
+                        continue
+                    f_path = ospath.join(dirpath, file)
+                    ffmpeg = FFMpeg(self)
+                    await ffmpeg.extract_subtitles(f_path)
+                    if self.is_cancelled:
+                        return
+        return path
 
     async def on_upload_error(self, error):
         async with task_dict_lock:
