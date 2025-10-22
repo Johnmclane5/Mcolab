@@ -194,7 +194,7 @@ class RcloneList:
             orig_index = index + self.iter_start
             name = idict["Path"]
             if name in self.selected_pathes or any(
-                p.endswith(f"/{name}") for p in self.selected_pathes
+                p.strip().endswith(f"/{name}") for p in self.selected_pathes
             ):
                 name = f"✅ {name}"
             if idict["IsDir"]:
@@ -267,8 +267,6 @@ class RcloneList:
             "--config",
             self.config_path,
             f"{self.remote}{self.path}",
-            "-v",
-            "--log-systemd",
         ]
         if self.listener.is_cancelled:
             return
