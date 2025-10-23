@@ -1,3 +1,4 @@
+
 import os
 from PIL import Image
 from aiofiles.os import remove, path as aiopath, makedirs
@@ -614,4 +615,280 @@ class FFMpeg:
         if self._listener.is_cancelled:
             return False
         if code == -9:
-         
+            self._listener.is_cancelled = True
+            return False
+        elif code == 0:
+            return output_file
+        else:
+            try:
+                stderr = stderr.decode().strip()
+            except Exception:
+                stderr = "Unable to decode the error!"
+            LOGGER.error(
+                f"{stderr}. Something went wrong while creating sample video, mostly file is corrupted. Path: {video_file}"
+            )
+            if await aiopath.exists(output_file):
+                await remove(output_file)
+            return False
+
+    async def split(self, f_path, file_, parts, split_size):
+        self.clear()
+        multi_streams = True
+        self._total_time = duration = (await get_media_info(f_path))[0]
+        base_name, extension = ospath.splitext(file_)
+        split_size -= 3000000
+        start_time = 0
+        i = 1
+        while i <= parts or start_time < duration - 4:
+            out_path = f_path.replace(file_, f"{base_name}.part{i:03}{extension}")
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-progress",
+                "pipe:1",
+                "-ss",
+                str(start_time),
+                "-i",
+                f_path,
+                "-fs",
+                str(split_size),
+                "-map",
+                "0",
+                "-map_chapters",
+                "-1",
+                "-async",
+                "1",
+                "-strict",
+                "-2",
+                "-c",
+                "copy",
+                "-threads",
+                f"{max(1, cpu_no // 2)}",
+                out_path,
+            ]
+            if not multi_streams:
+                del cmd[12]
+                del cmd[12]
+            if self._listener.is_cancelled:
+                return False
+            self._listener.subproc = await create_subprocess_exec(
+                *cmd, stdout=PIPE, stderr=PIPE
+            )
+            await self._ffmpeg_progress()
+            _, stderr = await self._listener.subproc.communicate()
+            code = self._listener.subproc.returncode
+            if self._listener.is_cancelled:
+                return False
+            if code == -9:
+                self._listener.is_cancelled = True
+                return False
+            elif code != 0:
+                try:
+                    stderr = stderr.decode().strip()
+                except:
+                    stderr = "Unable to decode the error!"
+                try:
+                    await remove(out_path)
+                except:
+                    pass
+                if multi_streams:
+                    LOGGER.warning(
+                        f"{stderr}. Retrying without map, -map 0 not working in all situations. Path: {f_path}"
+                    )
+                    multi_streams = False
+                    continue
+                else:
+                    LOGGER.warning(
+                        f"{stderr}. Unable to split this video, if it's size less than {self._listener.max_split_size} will be uploaded as it is. Path: {f_path}"
+                    )
+                return False
+            out_size = await aiopath.getsize(out_path)
+            if out_size > self._listener.max_split_size:
+                split_size -= (out_size - self._listener.max_split_size) + 5000000
+                LOGGER.warning(
+                    f"Part size is {out_size}. Trying again with lower split size!. Path: {f_path}"
+                )
+                await remove(out_path)
+                continue
+            lpd = (await get_media_info(out_path))[0]
+            if lpd == 0:
+                LOGGER.error(
+                    f"Something went wrong while splitting, mostly file is corrupted. Path: {f_path}"
+                )
+                break
+            elif duration == lpd:
+                LOGGER.warning(
+                    f"This file has been splitted with default stream and audio, so you will only see one part with less size from orginal one because it doesn't have all streams and audios. This happens mostly with MKV videos. Path: {f_path}"
+                )
+                break
+            elif lpd <= 3:
+                await remove(out_path)
+                break
+            self._last_processed_time += lpd
+            self._last_processed_bytes += out_size
+            start_time += lpd - 3
+            i += 1
+        return True
+
+    async def extract_subtitles(self, video_file):
+        self.clear()
+        base_name = ospath.splitext(video_file)[0]
+        output_srt = f"{base_name}.srt"
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-progress",
+            "pipe:1",
+            "-i",
+            video_file,
+            "-map",
+            "0:s:m:language:eng:0?",
+            "-c:s",
+            "srt",
+            "-threads",
+            f"{max(1, cpu_no // 2)}",
+            output_srt,
+        ]
+        if self._listener.is_cancelled:
+            return False
+        self._listener.subproc = await create_subprocess_exec(
+            *cmd, stdout=PIPE, stderr=PIPE
+        )
+        await self._ffmpeg_progress()
+        _, stderr = await self._listener.subproc.communicate()
+        code = self._listener.subproc.returncode
+        if self._listener.is_cancelled:
+            return False
+        if code == 0:
+            return True
+        elif code == -9:
+            self._listener.is_cancelled = True
+            return False
+        else:
+            try:
+                stderr = stderr.decode().strip()
+            except:
+                stderr = "Unable to decode the error!"
+            LOGGER.error(
+                f"{stderr}. Something went wrong while extracting subtitles. Path: {video_file}"
+            )
+        return False
+    
+
+    async def merge_videos(self, folder_path, output_path):
+        self.clear()
+
+        self._total_time = 0
+
+        # Collect all video files in the folder
+        mkv_files = []
+        mp4_file = []
+        srt_file = []
+        for root, _, files in os.walk(folder_path):
+            for f in files:
+                if f.endswith(('.mkv')):
+                    mkv_files.append(os.path.join(root, f)) 
+                if f.endswith(('.mp4')):
+                    mp4_file.append(os.path.join(root, f)) 
+                if f.endswith(('.srt')):
+                    srt_file.append(os.path.join(root, f)) 
+
+        # Ensure there are video files to merge
+        if not mkv_files and not mp4_file:
+            LOGGER.error(f"No video files found in the folder: {folder_path}")
+            return False
+        if mkv_files:
+            mkv_files.sort()
+            # Create a temporary text file for ffmpeg to read the list of video files
+            with open(os.path.join(folder_path, 'filelist.txt'), 'w', encoding='utf-8') as filelist:
+                for video in mkv_files:
+                    safe_video = video.replace("'", "'\\''")  # Escape single quotes for FFmpeg
+                    filelist.write(f"file '{safe_video}'\n")
+
+            # Construct the ffmpeg command to concatenate videos
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", os.path.join(folder_path, 'filelist.txt'),
+                "-c", "copy",
+                '-map', '0:v',
+                '-map', '0:a?',      # Optional audio
+                '-map', '0:s?',      # Optional subtitles
+                output_path
+            ]
+            
+        if mp4_file and srt_file:
+            # Use MKV format for output and original video file name
+            original_video = mp4_file[0]
+            base_name, _ = os.path.splitext(original_video)
+            output_mkv = f"{base_name}.mkv"
+            cmd = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",
+                '-i', original_video,
+            ]
+            # Add all subtitle files as inputs
+            for srt in srt_file:
+                cmd.extend(['-i', srt])
+            cmd.extend([
+                '-c:v', 'copy',
+                '-c:a', 'copy',
+                '-c:s', 'copy',
+            ])
+            # Map video and audio
+            cmd.extend(['-map', '0:v', '-map', '0:a'])
+            # Map all subtitle streams
+            for idx in range(1, len(srt_file) + 1):
+                cmd.extend(['-map', str(idx)])
+            cmd.append(output_mkv)
+            LOGGER.info(f"{cmd}")
+            output_path = output_mkv
+            
+        if self._listener.is_cancelled:
+            return False
+        
+        # Execute the ffmpeg command
+        self._listener.subproc = await create_subprocess_exec(
+            *cmd,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        
+        await self._ffmpeg_progress()
+        _, stderr = await self._listener.subproc.communicate()
+        code = self._listener.subproc.returncode
+        
+        # Clean up the temporary file list
+        #os.remove(os.path.join(folder_path, 'filelist.txt'))
+        for file in mkv_files:
+            try:
+                os.remove(file)  # Deletes the file
+            except Exception as e:
+                LOGGER.info(f"Error deleting {file}: {e}")
+                
+        if mp4_file:
+            os.remove(mp4_file[0])
+ 
+        if self._listener.is_cancelled:
+            return False
+        if code == 0:
+            return output_path
+        if code == -9:
+            self._listener.is_cancelled = True
+            return False
+        
+        try:
+            stderr = stderr.decode().strip()
+        except Exception:
+            stderr = "Unable to decode the error!"
+        
+        LOGGER.error(f"{stderr}. Something went wrong while merging videos. Folder: {folder_path}")
+        return False
