@@ -1,3 +1,4 @@
+
 import os
 from aiofiles.os import path as aiopath, listdir, makedirs, remove
 from os import path as ospath
@@ -516,4 +517,33 @@ class TaskListener(TaskConfig):
             count = len(task_dict)
         await send_message(self.message, f"{self.tag} {escape(str(error))}")
         if count == 0:
-            aw
+            await self.clean()
+        else:
+            await update_status_message(self.message.chat.id)
+
+        if (
+            self.is_super_chat
+            and Config.INCOMPLETE_TASK_NOTIFIER
+            and Config.DATABASE_URL
+        ):
+            await database.rm_complete_task(self.message.link)
+
+        async with queue_dict_lock:
+            if self.mid in queued_dl:
+                queued_dl[self.mid].set()
+                del queued_dl[self.mid]
+            if self.mid in queued_up:
+                queued_up[self.mid].set()
+                del queued_up[self.mid]
+            if self.mid in non_queued_dl:
+                non_queued_dl.remove(self.mid)
+            if self.mid in non_queued_up:
+                non_queued_up.remove(self.mid)
+
+        await start_from_queued()
+        await sleep(3)
+        await clean_download(self.dir)
+        if self.up_dir:
+            await clean_download(self.up_dir)
+        if self.thumb and await aiopath.exists(self.thumb):
+            await remove(self.thumb)
