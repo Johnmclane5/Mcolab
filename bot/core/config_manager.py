@@ -65,6 +65,7 @@ class Config:
     YT_DLP_OPTIONS = {}
     TMDB_API_KEY = ""
     IMGBB_API_KEY = ""
+    ACTIVE_USER_DUMP = ""
     
     @classmethod
     def get(cls, key):
