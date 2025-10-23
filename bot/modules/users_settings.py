@@ -75,7 +75,7 @@ async def get_user_settings(from_user, stype="main"):
         )
         if user_dict.get("USER_DUMP", False):
             udump = user_dict["USER_DUMP"]
-            adump = user_dict["ACTIVE_USER_DUMP"]
+            adump = user_dict.get("ACTIVE_USER_DUMP")
         else:
             udump = "None"
             adump = "None"
