@@ -574,8 +574,7 @@ class TelegramUploader:
             if (
                 self._thumb is None
                 and thumb is not None
-                and await aiopath.exists(thumb)
-            ):
+                and await aiopath.exists(thumb)):
                 await remove(thumb)
             err_type = "RPCError: " if isinstance(err, RPCError) else ""
             LOGGER.error(f"{err_type}{err}. Path: {self._up_path}")
@@ -595,7 +594,8 @@ class TelegramUploader:
                         self._sent_msg.chat.id,
                         self._sent_msg.id,
                     )
-                    if msg and msg.document.mime_type.startswith("video/"):
+                    if msg and (msg.document.mime_type.startswith("video/") 
+                                or msg.document.file_name.lower().endswith(".srt")):
                         cpy_msg = await msg.copy(target)
                     return cpy_msg
                 except Exception as e:
