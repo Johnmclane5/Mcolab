@@ -513,7 +513,7 @@ class TelegramUploader:
                         await imgbb_client.close()
 
                         file_info = await extract_file_info(cpy_msg, channel_id=cpy_msg.chat.id)
-                        file_info["ss_url"] = ss_url
+                        file_info["poster_url"] = ss_url
 
                         # Store in MongoDB
                         await files_col.update_one({"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]}, 
@@ -521,12 +521,6 @@ class TelegramUploader:
                                          upsert=True
                                         )
                         LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
-                        if Config.SSCHAT_ID:
-                            await TgClient.bot.send_photo(
-                            chat_id=int(Config.SSCHAT_ID),
-                            photo=ss_thumb,
-                            caption=f"{f_name}"
-                            )
                 except Exception as e:
                     LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
                     await self.cancel_task()
