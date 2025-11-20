@@ -508,7 +508,7 @@ class TelegramUploader:
                     if cpy_msg:
                         f_name = await remove_extension(ospath.splitext(file)[0])
                         imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                        screenshot = await imgbb_client.upload(file=ss_thumb, name=f_name)
+                        screenshot = await imgbb_client.upload(file=ss_thumb, name=f"{cpy_msg.id}")
                         ss_url = screenshot.url
                         await imgbb_client.close()
 
