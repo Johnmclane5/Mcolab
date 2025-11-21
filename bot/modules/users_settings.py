@@ -630,6 +630,10 @@ async def edit_user_settings(client, query):
         user_dict["ACTIVE_USER_DUMP"] = int(data[3])
         await database.update_user_data(user_id)
         await query.answer(f"Active User Dump set to channel ID: {data[3]}", show_alert=True)
+    elif data[2] == "nonedump":
+        user_dict.pop("ACTIVE_USER_DUMP", None)
+        await database.update_user_data(user_id)
+        await query.answer("Active user dump has been successfully set to None!", show_alert=True)
     else:
         await query.answer()
         await delete_message(message.reply_to_message)
@@ -674,6 +678,7 @@ async def show_user_dump_menu(message, user_id):
         for name, cid in dump_dict.items():
             buttons.data_button(name, f"userset {user_id} selectdump {cid}")
         buttons.data_button("Remove one", f"userset {user_id} rmone USER_DUMP")
+        buttons.data_button("Set to None", f"userset {user_id} nonedump")
     buttons.data_button("Back", f"userset {user_id} leech")
     buttons.data_button("Close", f"userset {user_id} close")
     await edit_message(message, "Select a User Dump channel or add one:", buttons.build_menu(1))
