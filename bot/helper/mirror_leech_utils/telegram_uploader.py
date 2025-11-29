@@ -269,7 +269,17 @@ class TelegramUploader:
                     no_ext = await remove_extension(file_)
                     existing = await db["files"].find_one({"file_name": no_ext})
                     if existing:
-                        LOGGER.info(f"File '{file_}' already exists in DB. Cancelling upload.")
+                        LOGGER.info(
+                            f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
+                        )
+                        is_video, _, _ = await get_document_type(self._up_path)
+                        if is_video and self._listener.thumbnail_layout:
+                            ss_thumb = await get_multiple_frames_thumbnail(
+                                self._up_path,
+                                self._listener.thumbnail_layout,
+                                self._listener.screen_shots,
+                            )
+                            await self._upload_to_imgbb(ss_thumb, file_, existing)
                         await self.cancel_task()
                         return
                 # --- End check ---
@@ -504,27 +514,7 @@ class TelegramUploader:
             cpy_msg = await self._copy_message()
 
             if self._listener.thumbnail_layout and ss_thumb:
-                try:
-                    if cpy_msg:
-                        f_name = await remove_extension(ospath.splitext(file)[0])
-                        imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
-                        screenshot = await imgbb_client.upload(file=ss_thumb, name=f"{cpy_msg.id}")
-                        ss_url = screenshot.url
-                        await imgbb_client.close()
-
-                        file_info = await extract_file_info(cpy_msg, channel_id=cpy_msg.chat.id)
-                        file_info["poster_url"] = ss_url
-
-                        # Store in MongoDB
-                        await files_col.update_one({"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]}, 
-                                         {"$set": file_info}, 
-                                         upsert=True
-                                        )
-                        LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
-                except Exception as e:
-                    LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
-                    await self.cancel_task()
-                    await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
+                await self._upload_to_imgbb(ss_thumb, file, cpy_msg)
 
             if (
                 not self._listener.is_cancelled
@@ -576,6 +566,41 @@ class TelegramUploader:
                 LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
                 return await self._upload_file(cap_mono, file, o_path, True)
             raise err
+
+    async def _upload_to_imgbb(self, ss_thumb, file, cpy_msg):
+        try:
+            if cpy_msg:
+                f_name = await remove_extension(ospath.splitext(file)[0])
+                imgbb_client = imgbbpy.AsyncClient(Config.IMGBB_API_KEY)
+                if isinstance(cpy_msg, dict):
+                    message_id = cpy_msg.get("message_id")
+                else:
+                    message_id = cpy_msg.id
+                screenshot = await imgbb_client.upload(
+                    file=ss_thumb, name=f"{message_id}"
+                )
+                ss_url = screenshot.url
+                await imgbb_client.close()
+                if isinstance(cpy_msg, dict):
+                    file_info = cpy_msg
+                else:
+                    file_info = await extract_file_info(
+                        cpy_msg, channel_id=cpy_msg.chat.id
+                    )
+                file_info["poster_url"] = ss_url
+                await files_col.update_one(
+                    {
+                        "channel_id": file_info["channel_id"],
+                        "message_id": file_info["message_id"],
+                    },
+                    {"$set": file_info},
+                    upsert=True,
+                )
+                LOGGER.info(f"Uploaded screenshot to imgbb: {f_name}")
+        except Exception as e:
+            LOGGER.error(f"Error uploading to imgbb or MongoDB: {e}")
+            await self.cancel_task()
+            await self._sent_msg.reply_text(f"Error uploading to imgbb or MongoDB: {e}")
 
     async def _copy_message(self):
         await sleep(1)
