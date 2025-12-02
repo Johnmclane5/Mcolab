@@ -165,39 +165,62 @@ async def take_ss(video_file, ss_nb) -> bool:
         LOGGER.error("take_ss: Can't get the duration of video")
         return False
 
-
-async def get_audio_thumbnail(audio_file):
+async def get_video_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
+
+    if duration is None:
+        duration = (await get_media_info(video_file))[0]
+    if duration == 0:
+        duration = 3
+
+    max_duration = min(duration, 60)
+
+    # Select a random frame after 10 seconds, within the first 25% of the video
+    end_time = max_duration * 0.25
+    start_time = 10
+
+    if end_time <= start_time:
+        # Video too short: fallback to midpoint
+        ss_time = min(max_duration / 2, max_duration - 1)
+    else:
+        ss_time = random.uniform(start_time, end_time)
+
     cmd = [
         "ffmpeg",
         "-hide_banner",
         "-loglevel",
         "error",
+        "-ss",
+        f"{ss_time}",
         "-i",
-        audio_file,
-        "-an",
-        "-vcodec",
-        "copy",
+        video_file,
+        "-vf",
+        "thumbnail",
+        "-q:v",
+        "1",
+        "-frames:v",
+        "1",
         "-threads",
         f"{max(1, cpu_no // 2)}",
         output,
     ]
+
     try:
         _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
         if code != 0 or not await aiopath.exists(output):
             LOGGER.error(
-                f"Error while extracting thumbnail from audio. Name: {audio_file} stderr: {err}"
+                f"Error while extracting thumbnail from video. Name: {video_file} stderr: {err}"
             )
             return None
     except:
         LOGGER.error(
-            f"Error while extracting thumbnail from audio. Name: {audio_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+            f"Error while extracting thumbnail from video. Name: {video_file}. Error: Timeout or ffmpeg issue!"
         )
         return None
-    return output
 
+    return output
 
 async def _get_ss_time(video_file, duration, is_gif=False):
     if duration is None:
