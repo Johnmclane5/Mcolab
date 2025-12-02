@@ -274,7 +274,7 @@ class TelegramUploader:
                         LOGGER.info(
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
-                        imgbb_thumb = await get_video_thumbnail(self._up_path, None)
+                        imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
                         await self._upload_to_imgbb(imgbb_thumb, file_, existing)
                         await self.cancel_task()
                         return
