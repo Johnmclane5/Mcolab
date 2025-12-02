@@ -165,6 +165,38 @@ async def take_ss(video_file, ss_nb) -> bool:
         LOGGER.error("take_ss: Can't get the duration of video")
         return False
 
+async def get_audio_thumbnail(audio_file):
+    output_dir = f"{DOWNLOAD_DIR}thumbnails"
+    await makedirs(output_dir, exist_ok=True)
+    output = ospath.join(output_dir, f"{time()}.jpg")
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        audio_file,
+        "-an",
+        "-vcodec",
+        "copy",
+        "-threads",
+        f"{max(1, cpu_no // 2)}",
+        output,
+    ]
+    try:
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
+        if code != 0 or not await aiopath.exists(output):
+            LOGGER.error(
+                f"Error while extracting thumbnail from audio. Name: {audio_file} stderr: {err}"
+            )
+            return None
+    except:
+        LOGGER.error(
+            f"Error while extracting thumbnail from audio. Name: {audio_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+        )
+        return None
+    return output
+
 async def get_video_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
