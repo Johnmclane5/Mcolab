@@ -10,7 +10,7 @@ from logging import getLogger
 from natsort import natsorted
 from os import walk, path as ospath
 from time import time
-from re import match as re_match, sub as re_sub
+from re import match as re_match, sub as re_subm, re_search
 from pyrogram.errors import FloodWait, RPCError, BadRequest
 from aiofiles.os import (
     remove,
@@ -274,7 +274,10 @@ class TelegramUploader:
                         LOGGER.info(
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
-                        imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
+                        if self._listener.user_dict.get("GENERATE_GIF"):
+                            imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
+                        else:
+                            imgbb_thumb = await get_video_thumbnail(self._up_path, None)
                         await self._upload_to_imgbb(imgbb_thumb, file_, existing)
                         await self.cancel_task()
                         return

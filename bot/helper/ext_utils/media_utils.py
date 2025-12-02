@@ -199,25 +199,35 @@ async def get_audio_thumbnail(audio_file):
     return output
 
 
-async def _get_ss_time(video_file, duration):
+async def _get_ss_time(video_file, duration, is_gif=False):
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
 
-    max_duration = min(duration, 60)
-    end_time = max_duration * 0.25
-    if max_duration <= 4:
-        ss_time = max_duration / 2
+    if is_gif:
+        gif_duration = 10
+        if duration * 0.8 >= gif_duration:
+            start_range = duration * 0.2
+            end_range = duration - gif_duration
+            ss_time = random.uniform(start_range, end_range)
+        else:
+            ss_time = 0
     else:
-        ss_time = random.uniform(1, end_time)
+        max_duration = min(duration, 60)
+        end_time = max_duration * 0.25
+        if max_duration <= 4:
+            ss_time = max_duration / 2
+        else:
+            ss_time = random.uniform(1, end_time)
     return ss_time
+
 
 async def get_video_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
-    ss_time = await _get_ss_time(video_file, duration)
+    ss_time = await _get_ss_time(video_file, duration, is_gif=False)
     cmd = [
         "ffmpeg",
         "-hide_banner",
@@ -304,7 +314,7 @@ async def generate_gif_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.gif")
-    ss_time = await _get_ss_time(video_file, duration)
+    ss_time = await _get_ss_time(video_file, duration, is_gif=True)
     cmd = [
         "ffmpeg",
         "-hide_banner",
@@ -313,7 +323,7 @@ async def generate_gif_thumbnail(video_file, duration):
         "-ss",
         f"{ss_time}",
         "-t",
-        "5",
+        "10",
         "-i",
         video_file,
         "-vf",
