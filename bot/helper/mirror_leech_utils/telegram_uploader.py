@@ -42,6 +42,7 @@ from ..ext_utils.media_utils import (
     get_video_thumbnail,
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
+    generate_gif_thumbnail,
 )
 from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster, extract_file_info
 from motor.motor_asyncio import AsyncIOMotorClient 
@@ -381,13 +382,16 @@ class TelegramUploader:
             self._thumb = None
         thumb = self._thumb
         self._is_corrupted = False
-        imgbb_thumb = None
         try:
+            imgbb_thumb = None
             is_video, is_audio, is_image = await get_document_type(self._up_path)
             tmdb_poster_url = None
 
             if db and is_video:
-                ibb_thumb = await get_video_thumbnail(self._up_path, None)
+                if self._listener.user_dict.get("GENERATE_GIF"):
+                    imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
+                else:
+                    imgbb_thumb = await get_video_thumbnail(self._up_path, None)
 
             if Config.TMDB_API_KEY and is_video:
                 title = remove_redandent(ospath.splitext(file)[0])
@@ -516,8 +520,8 @@ class TelegramUploader:
 
             cpy_msg = await self._copy_message()
 
-            if ibb_thumb:
-                await self._upload_to_imgbb(ibb_thumb, file, cpy_msg)
+            if imgbb_thumb:
+                await self._upload_to_imgbb(imgbb_thumb, file, cpy_msg)
 
             if (
                 not self._listener.is_cancelled

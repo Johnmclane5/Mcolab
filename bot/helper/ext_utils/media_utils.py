@@ -1,5 +1,6 @@
 
 import os
+import random
 from PIL import Image
 from aiofiles.os import remove, path as aiopath, makedirs
 from asyncio import (
@@ -198,23 +199,32 @@ async def get_audio_thumbnail(audio_file):
     return output
 
 
-async def get_video_thumbnail(video_file, duration):
-    output_dir = f"{DOWNLOAD_DIR}thumbnails"
-    await makedirs(output_dir, exist_ok=True)
-    output = ospath.join(output_dir, f"{time()}.jpg")
+async def _get_ss_time(video_file, duration):
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
-    duration = min(duration, 60)
-    duration = duration // 2
+
+    max_duration = min(duration, 60)
+    end_time = max_duration * 0.25
+    if max_duration <= 4:
+        ss_time = max_duration / 2
+    else:
+        ss_time = random.uniform(1, end_time)
+    return ss_time
+
+async def get_video_thumbnail(video_file, duration):
+    output_dir = f"{DOWNLOAD_DIR}thumbnails"
+    await makedirs(output_dir, exist_ok=True)
+    output = ospath.join(output_dir, f"{time()}.jpg")
+    ss_time = await _get_ss_time(video_file, duration)
     cmd = [
         "ffmpeg",
         "-hide_banner",
         "-loglevel",
         "error",
         "-ss",
-        f"{duration}",
+        f"{ss_time}",
         "-i",
         video_file,
         "-vf",
@@ -287,6 +297,43 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     finally:
         if not keep_screenshots:
             await rmtree(dirpath, ignore_errors=True)
+    return output
+
+
+async def generate_gif_thumbnail(video_file, duration):
+    output_dir = f"{DOWNLOAD_DIR}thumbnails"
+    await makedirs(output_dir, exist_ok=True)
+    output = ospath.join(output_dir, f"{time()}.gif")
+    ss_time = await _get_ss_time(video_file, duration)
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{ss_time}",
+        "-t",
+        "5",
+        "-i",
+        video_file,
+        "-vf",
+        "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+        "-loop",
+        "0",
+        output,
+    ]
+    try:
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
+        if code != 0 or not await aiopath.exists(output):
+            LOGGER.error(
+                f"Error while generating GIF thumbnail. Name: {video_file} stderr: {err}"
+            )
+            return None
+    except:
+        LOGGER.error(
+            f"Error while generating GIF thumbnail. Name: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+        )
+        return None
     return output
 
 
