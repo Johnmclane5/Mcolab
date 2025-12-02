@@ -272,14 +272,8 @@ class TelegramUploader:
                         LOGGER.info(
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
-                        is_video, _, _ = await get_document_type(self._up_path)
-                        if is_video and self._listener.thumbnail_layout:
-                            ss_thumb = await get_multiple_frames_thumbnail(
-                                self._up_path,
-                                self._listener.thumbnail_layout,
-                                self._listener.screen_shots,
-                            )
-                            await self._upload_to_imgbb(ss_thumb, file_, existing)
+                        imgbb_thumb = await get_video_thumbnail(self._up_path, None)
+                        await self._upload_to_imgbb(imgbb_thumb, file_, existing)
                         await self.cancel_task()
                         return
                 # --- End check ---
@@ -386,9 +380,9 @@ class TelegramUploader:
             self._thumb = None
         thumb = self._thumb
         self._is_corrupted = False
+        imgbb_thumb = None
         try:
             is_video, is_audio, is_image = await get_document_type(self._up_path)
-            ss_thumb = None
             tmdb_poster_url = None
 
             if Config.TMDB_API_KEY and is_video:
@@ -422,15 +416,15 @@ class TelegramUploader:
                     thumb =  await self.get_custom_thumb(tmdb_poster_url)
                     LOGGER.info("Got the poster")
 
-                if is_video and thumb is None:
-                    thumb = await get_video_thumbnail(self._up_path, None)
-
-                if is_video and self._listener.thumbnail_layout:
-                    ss_thumb = await get_multiple_frames_thumbnail(
+                if is_video and self._listener.thumbnail_layout and thumb is None:
+                    thumb = await get_multiple_frames_thumbnail(
                     self._up_path,
                     self._listener.thumbnail_layout,
                     self._listener.screen_shots,
                     )
+
+                if is_video and thumb is None:
+                    thumb = await get_video_thumbnail(self._up_path, None)
 
                 if self._listener.is_cancelled:
                     return
@@ -448,15 +442,17 @@ class TelegramUploader:
             elif is_video:
                 key = "videos"
                 duration = (await get_media_info(self._up_path))[0]
+                if tmdb_poster_url and thumb is None:
+                    thumb =  await self.get_custom_thumb(tmdb_poster_url)
+                    LOGGER.info("Got the poster")
+
                 if thumb is None and self._listener.thumbnail_layout:
-                    ss_thumb = await get_multiple_frames_thumbnail(
+                    thumb = await get_multiple_frames_thumbnail(
                         self._up_path,
                         self._listener.thumbnail_layout,
                         self._listener.screen_shots,
                     )
-                if tmdb_poster_url and thumb is None:
-                    thumb =  await self.get_custom_thumb(tmdb_poster_url)
-                    LOGGER.info("Got the poster")
+
                 if thumb is None:
                     thumb = await get_video_thumbnail(self._up_path, duration)
                 if thumb is not None and thumb != "none":
@@ -513,8 +509,8 @@ class TelegramUploader:
 
             cpy_msg = await self._copy_message()
 
-            if self._listener.thumbnail_layout and ss_thumb:
-                await self._upload_to_imgbb(ss_thumb, file, cpy_msg)
+            if thumb:
+                await self._upload_to_imgbb(thumb, file, cpy_msg)
 
             if (
                 not self._listener.is_cancelled
@@ -566,8 +562,11 @@ class TelegramUploader:
                 LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
                 return await self._upload_file(cap_mono, file, o_path, True)
             raise err
+        finally:
+            if imgbb_thumb and await aiopath.exists(imgbb_thumb):
+                await remove(imgbb_thumb)
 
-    async def _upload_to_imgbb(self, ss_thumb, file, cpy_msg):
+    async def _upload_to_imgbb(self, imgbb_thumb, file, cpy_msg):
         try:
             if cpy_msg:
                 f_name = await remove_extension(ospath.splitext(file)[0])
@@ -577,7 +576,7 @@ class TelegramUploader:
                 else:
                     message_id = cpy_msg.id
                 screenshot = await imgbb_client.upload(
-                    file=ss_thumb, name=f"{message_id}"
+                    file=imgbb_thumb, name=f"{message_id}"
                 )
                 ss_url = screenshot.url
                 await imgbb_client.close()
