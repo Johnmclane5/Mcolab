@@ -10,7 +10,7 @@ from logging import getLogger
 from natsort import natsorted
 from os import walk, path as ospath
 from time import time
-from re import match as re_match, sub as re_subm,
+from re import match as re_match, sub as re_sub,
 from pyrogram.errors import FloodWait, RPCError, BadRequest
 from aiofiles.os import (
     remove,
