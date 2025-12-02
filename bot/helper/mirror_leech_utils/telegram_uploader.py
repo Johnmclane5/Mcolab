@@ -1,5 +1,6 @@
 import contextlib
 import aiohttp
+import re
 import PTN
 import imgbbpy
 from PIL import Image
@@ -9,7 +10,7 @@ from logging import getLogger
 from natsort import natsorted
 from os import walk, path as ospath
 from time import time
-from re import match as re_match, sub as re_sub
+from re import match as re_match, sub as re_subm, re_search
 from pyrogram.errors import FloodWait, RPCError, BadRequest
 from aiofiles.os import (
     remove,
@@ -393,6 +394,9 @@ class TelegramUploader:
                 parsed_data = PTN.parse(title)
                 title = parsed_data.get("title", "").replace("_", " ").replace("-", " ").replace(":", " ")
                 title = ' '.join(title.split())
+                aka_pattern = r'\sA[.\s]?K[.\s]?A[.]?\s+'
+                if re.search(aka_pattern, title, re.IGNORECASE):
+                    title = re.split(aka_pattern, title, maxsplit=1, flags=re.IGNORECASE)[0].strip()
                 year = parsed_data.get("year")
                 season = parsed_data.get("season")
 
