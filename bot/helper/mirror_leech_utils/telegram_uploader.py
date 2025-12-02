@@ -385,6 +385,9 @@ class TelegramUploader:
             is_video, is_audio, is_image = await get_document_type(self._up_path)
             tmdb_poster_url = None
 
+            if db and is_video:
+                ibb_thumb = await get_video_thumbnail(self._up_path, None)
+
             if Config.TMDB_API_KEY and is_video:
                 title = remove_redandent(ospath.splitext(file)[0])
                 parsed_data = PTN.parse(title)
@@ -509,8 +512,8 @@ class TelegramUploader:
 
             cpy_msg = await self._copy_message()
 
-            if thumb:
-                await self._upload_to_imgbb(thumb, file, cpy_msg)
+            if ibb_thumb:
+                await self._upload_to_imgbb(ibb_thumb, file, cpy_msg)
 
             if (
                 not self._listener.is_cancelled
