@@ -245,46 +245,6 @@ async def _get_ss_time(video_file, duration, is_gif=False):
             ss_time = random.uniform(1, end_time)
     return ss_time
 
-
-async def get_video_thumbnail(video_file, duration):
-    output_dir = f"{DOWNLOAD_DIR}thumbnails"
-    await makedirs(output_dir, exist_ok=True)
-    output = ospath.join(output_dir, f"{time()}.jpg")
-    ss_time = await _get_ss_time(video_file, duration, is_gif=False)
-    cmd = [
-        "ffmpeg",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-ss",
-        f"{ss_time}",
-        "-i",
-        video_file,
-        "-vf",
-        "thumbnail",
-        "-q:v",
-        "1",
-        "-frames:v",
-        "1",
-        "-threads",
-        f"{max(1, cpu_no // 2)}",
-        output,
-    ]
-    try:
-        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
-        if code != 0 or not await aiopath.exists(output):
-            LOGGER.error(
-                f"Error while extracting thumbnail from video. Name: {video_file} stderr: {err}"
-            )
-            return None
-    except:
-        LOGGER.error(
-            f"Error while extracting thumbnail from video. Name: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
-        )
-        return None
-    return output
-
-
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     ss_nb = layout.split("x")
     ss_nb = int(ss_nb[0]) * int(ss_nb[1])
