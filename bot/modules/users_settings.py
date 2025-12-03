@@ -176,17 +176,6 @@ async def get_user_settings(from_user, stype="main"):
         else:
             thumb_layout = "None"
 
-        if user_dict.get("GENERATE_GIF", False):
-            buttons.data_button(
-                "Disable GIF Thumbnail", f"userset {user_id} tog GENERATE_GIF f"
-            )
-            gif_thumb = "Enabled"
-        else:
-            buttons.data_button(
-                "Enable GIF Thumbnail", f"userset {user_id} tog GENERATE_GIF t"
-            )
-            gif_thumb = "Disabled"
-
         buttons.data_button("Back", f"userset {user_id} back")
         buttons.data_button("Close", f"userset {user_id} close")
 
@@ -203,7 +192,6 @@ Active dump <code>{adump}</code>
 Leech by <b>{leech_method}</b> session
 HYBRID Leech is <b>{hybrid_leech}</b>
 Thumbnail Layout is <b>{thumb_layout}</b>
-GIF Thumbnail is <b>{gif_thumb}</b>
 """
     elif stype == "rclone":
         buttons.data_button("Rclone Config", f"userset {user_id} menu RCLONE_CONFIG")

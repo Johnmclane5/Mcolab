@@ -42,7 +42,6 @@ from ..ext_utils.media_utils import (
     get_video_thumbnail,
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
-    generate_gif_thumbnail,
 )
 from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster, extract_file_info
 from motor.motor_asyncio import AsyncIOMotorClient 
@@ -274,10 +273,7 @@ class TelegramUploader:
                         LOGGER.info(
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
-                        if self._listener.user_dict.get("GENERATE_GIF"):
-                            imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
-                        else:
-                            imgbb_thumb = await get_video_thumbnail(self._up_path, None)
+                        imgbb_thumb = await get_video_thumbnail(self._up_path, None)
                         await self._upload_to_imgbb(imgbb_thumb, file_, existing)
                         await self.cancel_task()
                         return
@@ -391,10 +387,7 @@ class TelegramUploader:
             tmdb_poster_url = None
 
             if db and is_video:
-                if self._listener.user_dict.get("GENERATE_GIF"):
-                    imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
-                else:
-                    imgbb_thumb = await get_video_thumbnail(self._up_path, None)
+                imgbb_thumb = await get_video_thumbnail(self._up_path, None)
 
             if Config.TMDB_API_KEY and is_video:
                 title = remove_redandent(ospath.splitext(file)[0])
