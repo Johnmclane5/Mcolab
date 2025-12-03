@@ -206,11 +206,11 @@ async def get_video_thumbnail(video_file, duration):
     if duration == 0:
         duration = 3
 
-    max_duration = min(duration, 60)
+    max_duration = min(duration, 180)
 
     # Select a random frame after 10 seconds, within the first 25% of the video
     end_time = max_duration * 0.25
-    start_time = 10
+    start_time = 2
 
     if end_time <= start_time:
         # Video too short: fallback to midpoint
