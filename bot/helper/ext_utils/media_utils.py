@@ -261,7 +261,7 @@ async def _get_ss_time(video_file, duration, is_gif=False):
         duration = 3
 
     if is_gif:
-        gif_duration = 10
+        gif_duration = 5
         if duration * 0.8 >= gif_duration:
             start_range = duration * 0.2
             end_range = duration - gif_duration
@@ -338,11 +338,11 @@ async def generate_gif_thumbnail(video_file, duration):
         "-ss",
         f"{ss_time}",
         "-t",
-        "10",
+        "5",
         "-i",
         video_file,
         "-vf",
-        "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+        "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
         "-loop",
         "0",
         output,
