@@ -201,18 +201,19 @@ async def get_video_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
+
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
 
-    max_duration = min(duration, 180)
+    max_duration = min(duration, 60)
 
     # Select a random frame after 10 seconds, within the first 25% of the video
     end_time = max_duration * 0.25
     start_time = 10
 
-    if end_time < start_time:
+    if end_time <= start_time:
         # Video too short: fallback to midpoint
         ss_time = min(max_duration / 2, max_duration - 1)
     else:
@@ -252,6 +253,29 @@ async def get_video_thumbnail(video_file, duration):
         return None
 
     return output
+
+async def _get_ss_time(video_file, duration, is_gif=False):
+    if duration is None:
+        duration = (await get_media_info(video_file))[0]
+    if duration == 0:
+        duration = 3
+
+    if is_gif:
+        gif_duration = 10
+        if duration * 0.8 >= gif_duration:
+            start_range = duration * 0.2
+            end_range = duration - gif_duration
+            ss_time = random.uniform(start_range, end_range)
+        else:
+            ss_time = 0
+    else:
+        max_duration = min(duration, 60)
+        end_time = max_duration * 0.25
+        if max_duration <= 4:
+            ss_time = max_duration / 2
+        else:
+            ss_time = random.uniform(1, end_time)
+    return ss_time
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     ss_nb = layout.split("x")
@@ -298,6 +322,43 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     finally:
         if not keep_screenshots:
             await rmtree(dirpath, ignore_errors=True)
+    return output
+
+
+async def generate_gif_thumbnail(video_file, duration):
+    output_dir = f"{DOWNLOAD_DIR}thumbnails"
+    await makedirs(output_dir, exist_ok=True)
+    output = ospath.join(output_dir, f"{time()}.gif")
+    ss_time = await _get_ss_time(video_file, duration, is_gif=True)
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-ss",
+        f"{ss_time}",
+        "-t",
+        "10",
+        "-i",
+        video_file,
+        "-vf",
+        "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+        "-loop",
+        "0",
+        output,
+    ]
+    try:
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
+        if code != 0 or not await aiopath.exists(output):
+            LOGGER.error(
+                f"Error while generating GIF thumbnail. Name: {video_file} stderr: {err}"
+            )
+            return None
+    except:
+        LOGGER.error(
+            f"Error while generating GIF thumbnail. Name: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+        )
+        return None
     return output
 
 
