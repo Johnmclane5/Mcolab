@@ -254,29 +254,6 @@ async def get_video_thumbnail(video_file, duration):
 
     return output
 
-async def _get_ss_time(video_file, duration, is_gif=False):
-    if duration is None:
-        duration = (await get_media_info(video_file))[0]
-    if duration == 0:
-        duration = 3
-
-    if is_gif:
-        gif_duration = 5
-        if duration * 0.8 >= gif_duration:
-            start_range = duration * 0.2
-            end_range = duration - gif_duration
-            ss_time = random.uniform(start_range, end_range)
-        else:
-            ss_time = 0
-    else:
-        max_duration = min(duration, 60)
-        end_time = max_duration * 0.25
-        if max_duration <= 4:
-            ss_time = max_duration / 2
-        else:
-            ss_time = random.uniform(1, end_time)
-    return ss_time
-
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     ss_nb = layout.split("x")
     ss_nb = int(ss_nb[0]) * int(ss_nb[1])
@@ -329,34 +306,73 @@ async def generate_gif_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.gif")
-    ss_time = await _get_ss_time(video_file, duration, is_gif=True)
-    cmd = [
-        "ffmpeg",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-ss",
-        f"{ss_time}",
-        "-t",
-        "5",
-        "-i",
-        video_file,
-        "-vf",
-        "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
-        "-loop",
-        "0",
-        output,
-    ]
+    if duration is None:
+        duration = (await get_media_info(video_file))[0]
+    if duration < 12:
+        # Fallback to original method for short videos
+        gif_duration = 3
+        if duration * 0.8 >= gif_duration:
+            start_range = duration * 0.2
+            end_range = duration - gif_duration
+            ss_time = random.uniform(start_range, end_range)
+        else:
+            ss_time = 0
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-ss",
+            f"{ss_time}",
+            "-t",
+            "3",
+            "-i",
+            video_file,
+            "-vf",
+            "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+            "-loop",
+            "0",
+            output,
+        ]
+    else:
+        # Generate a 9-second GIF from 3 clips
+        clip_duration = 3
+        start_time = 1  # Start of first clip
+        mid_time = (duration / 2) - (clip_duration / 2)  # Start of second clip
+        end_time = duration - clip_duration - 1  # Start of third clip
+        
+        filter_complex = (
+            f"[0:v]trim=start={start_time}:end={start_time + clip_duration},setpts=PTS-STARTPTS[v0];"
+            f"[0:v]trim=start={mid_time}:end={mid_time + clip_duration},setpts=PTS-STARTPTS[v1];"
+            f"[0:v]trim=start={end_time}:end={end_time + clip_duration},setpts=PTS-STARTPTS[v2];"
+            f"[v0][v1][v2]concat=n=3:v=1:a=0,fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
+            "[s0]palettegen[p];[s1][p]paletteuse"
+        )
+        
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            video_file,
+            "-filter_complex",
+            filter_complex,
+            "-loop",
+            "0",
+            output,
+        ]
+
     try:
-        _, err, code = await wait_for(cmd_exec(cmd), timeout=60)
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=120)  # Increased timeout for longer processing
         if code != 0 or not await aiopath.exists(output):
             LOGGER.error(
                 f"Error while generating GIF thumbnail. Name: {video_file} stderr: {err}"
             )
             return None
-    except:
+    except Exception as e:
         LOGGER.error(
-            f"Error while generating GIF thumbnail. Name: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+            f"Error while generating GIF thumbnail: {e}. Path: {video_file}"
         )
         return None
     return output
