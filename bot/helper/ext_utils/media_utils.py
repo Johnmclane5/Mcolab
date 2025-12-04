@@ -340,9 +340,9 @@ async def generate_gif_thumbnail(video_file, duration):
     else:
         # Generate a 9-second GIF from 3 clips
         clip_duration = 3
-        start_time = 1
+        start_time = 120
         mid_time = (duration / 2) - (clip_duration / 2)
-        end_time = duration - clip_duration - 5
+        end_time = duration - clip_duration - 60
         
         cmd = [
             "ffmpeg",
