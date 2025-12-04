@@ -370,8 +370,8 @@ async def generate_gif_thumbnail(video_file, duration):
             video_file,
             "-filter_complex",
             "[0:v]fps=12,scale=360:-1:flags=lanczos[v0];"
-            "[1:v]fps=12,scale=320:-1:flags=lanczos[v1];"
-            "[2:v]fps=12,scale=320:-1:flags=lanczos[v2];"
+            "[1:v]fps=12,scale=360:-1:flags=lanczos[v1];"
+            "[2:v]fps=12,scale=360:-1:flags=lanczos[v2];"
             "[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
             "[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
