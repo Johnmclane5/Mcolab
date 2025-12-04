@@ -345,12 +345,12 @@ async def generate_gif_thumbnail(video_file, duration):
         end_time = duration - clip_duration - 1
         
         filter_complex = (
-            f"[0:v]trim=start={start_time}:duration={clip_duration},setpts=PTS-STARTPTS[v0];"
-            f"[0:v]trim=start={mid_time}:duration={clip_duration},setpts=PTS-STARTPTS[v1];"
-            f"[0:v]trim=start={end_time}:duration={clip_duration},setpts=PTS-STARTPTS[v2];"
-            f"[v0][v1][v2]concat=n=3:v=1:a=0[v];"
-            f"[v]fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
-            f"[s0]palettegen[p];[s1][p]paletteuse"
+            f"select='between(t,{start_time},{start_time + clip_duration})+"
+            f"between(t,{mid_time},{mid_time + clip_duration})+"
+            f"between(t,{end_time},{end_time + clip_duration})',"
+            "setpts=N/FRAME_RATE/TB,"
+            "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
+            "[s0]palettegen[p];[s1][p]paletteuse"
         )
         
         cmd = [
