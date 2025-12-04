@@ -311,7 +311,7 @@ async def generate_gif_thumbnail(video_file, duration):
     if duration == 0:
         duration = 3
         
-    if duration < 12:
+    if duration < 25:
         # Fallback to original method for short videos
         gif_duration = 3
         if duration * 0.8 >= gif_duration:
@@ -340,9 +340,10 @@ async def generate_gif_thumbnail(video_file, duration):
     else:
         # Generate a 9-second GIF from 3 clips
         clip_duration = 3
-        start_time = 120
-        mid_time = (duration / 2) - (clip_duration / 2)
-        end_time = duration - clip_duration - 60
+        zone_size = duration / 3
+        start_time = random.uniform(30, zone_size - clip_duration)
+        mid_time = random.uniform(zone_size, (2 * zone_size) - clip_duration)
+        end_time = random.uniform((2 * zone_size), duration - clip_duration - 30)
         
         cmd = [
             "ffmpeg",
