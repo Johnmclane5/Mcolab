@@ -332,7 +332,7 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-vf",
-            "fps=8,scale=240:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+            "fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
             "0",
             output,
@@ -369,9 +369,9 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-filter_complex",
-            "[0:v]fps=8,scale=240:-1:flags=lanczos[v0];"
-            "[1:v]fps=8,scale=240:-1:flags=lanczos[v1];"
-            "[2:v]fps=8,scale=240:-1:flags=lanczos[v2];"
+            "[0:v]fps=10,scale=320:-1:flags=lanczos[v0];"
+            "[1:v]fps=10,scale=320:-1:flags=lanczos[v1];"
+            "[2:v]fps=10,scale=320:-1:flags=lanczos[v2];"
             "[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
             "[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
