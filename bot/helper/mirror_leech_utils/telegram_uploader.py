@@ -274,6 +274,14 @@ class TelegramUploader:
                         LOGGER.info(
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
+                        if 'poster_delete_url' in existing:
+                            delete_url = existing['poster_delete_url']
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(delete_url) as resp:
+                                    if resp.status == 200:
+                                        LOGGER.info(f"Successfully deleted old imgbb image: {delete_url}")
+                                    else:
+                                        LOGGER.error(f"Failed to delete old imgbb image: {delete_url} with status: {resp.status}")
                         if self._listener.user_dict.get("GENERATE_GIF"):
                             imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
                         else:
@@ -593,6 +601,7 @@ class TelegramUploader:
                     file=imgbb_thumb, name=f"{message_id}"
                 )
                 ss_url = screenshot.url
+                ss_del_url = screenshot.delete_url
                 await imgbb_client.close()
                 if isinstance(cpy_msg, dict):
                     file_info = cpy_msg
@@ -601,6 +610,7 @@ class TelegramUploader:
                         cpy_msg, channel_id=cpy_msg.chat.id
                     )
                 file_info["poster_url"] = ss_url
+                file_info["poster_delete_url"] = ss_del_url
                 await files_col.update_one(
                     {
                         "channel_id": file_info["channel_id"],
