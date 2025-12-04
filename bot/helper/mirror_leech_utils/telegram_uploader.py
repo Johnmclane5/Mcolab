@@ -276,20 +276,10 @@ class TelegramUploader:
                         )
                         if 'poster_delete_url' in existing:
                             poster_url = existing['poster_delete_url']
-                            async with aiohttp.ClientSession() as session:
-                                async with session.get(poster_url) as resp:
-                                    if resp.status == 200:
-                                        content = await resp.text()
-                                        match = re.search(r'auth_token="([^"]+)"', content)
-                                        if match:
-                                            auth_token = match.group(1)
-                                            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-                                            data = {'auth_token': auth_token, 'confirmation': 'delete', 'action': 'delete'}
-                                            async with session.post(poster_url, headers=headers, data=data) as resp:
-                                                if resp.status == 200:
-                                                    LOGGER.info(f"ImgBB poster deleted from link: {poster_url}")
-                                                else:
-                                                    LOGGER.error(f"Failed to delete ImgBB poster: {resp.status}")
+                            await self._sent_msg.reply_text(
+                                f"An old ImgBB poster for this file was found. Please delete it manually: {poster_url}",
+                                disable_web_page_preview=True,
+                            )
                         if self._listener.user_dict.get("GENERATE_GIF"):
                             imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
                         else:
