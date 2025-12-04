@@ -344,24 +344,32 @@ async def generate_gif_thumbnail(video_file, duration):
         mid_time = (duration / 2) - (clip_duration / 2)
         end_time = duration - clip_duration - 1
         
-        filter_complex = (
-            f"select='between(t,{start_time},{start_time + clip_duration})+"
-            f"between(t,{mid_time},{mid_time + clip_duration})+"
-            f"between(t,{end_time},{end_time + clip_duration})',"
-            "setpts=N/FRAME_RATE/TB,"
-            "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
-            "[s0]palettegen[p];[s1][p]paletteuse"
-        )
-        
         cmd = [
             "ffmpeg",
             "-hide_banner",
             "-loglevel",
             "error",
+            "-ss",
+            f"{start_time}",
+            "-t",
+            f"{clip_duration}",
+            "-i",
+            video_file,
+            "-ss",
+            f"{mid_time}",
+            "-t",
+            f"{clip_duration}",
+            "-i",
+            video_file,
+            "-ss",
+            f"{end_time}",
+            "-t",
+            f"{clip_duration}",
             "-i",
             video_file,
             "-filter_complex",
-            filter_complex,
+            "[0:v][1:v][2:v]concat=n=3:v=1:a=0,fps=15,scale=600:-1:flags=lanczos[v];"
+            "[v]palettegen[p];[v][p]paletteuse",
             "-loop",
             "0",
             output,
