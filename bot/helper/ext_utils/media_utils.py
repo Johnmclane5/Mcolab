@@ -332,14 +332,14 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-vf",
-            "fps=8,scale=360:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+            "fps=8,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
             "0",
             output,
         ]
     else:
-        # Generate a 2-second GIF from 3 clips
-        clip_duration = 2
+        # Generate a 1-second GIF from 3 clips
+        clip_duration = 1
         zone_size = duration / 3
         start_time = random.uniform(30, zone_size - clip_duration)
         mid_time = random.uniform(zone_size, (2 * zone_size) - clip_duration)
@@ -369,9 +369,9 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-filter_complex",
-            "[0:v]fps=8,scale=360:-1:flags=lanczos[v0];"
-            "[1:v]fps=8,scale=360:-1:flags=lanczos[v1];"
-            "[2:v]fps=8,scale=360:-1:flags=lanczos[v2];"
+            "[0:v]fps=8,scale=600:-1:flags=lanczos[v0];"
+            "[1:v]fps=8,scale=600:-1:flags=lanczos[v1];"
+            "[2:v]fps=8,scale=600:-1:flags=lanczos[v2];"
             "[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
             "[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
