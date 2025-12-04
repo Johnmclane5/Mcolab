@@ -308,6 +308,9 @@ async def generate_gif_thumbnail(video_file, duration):
     output = ospath.join(output_dir, f"{time()}.gif")
     if duration is None:
         duration = (await get_media_info(video_file))[0]
+    if duration == 0:
+        duration = 3
+        
     if duration < 12:
         # Fallback to original method for short videos
         gif_duration = 3
@@ -337,16 +340,17 @@ async def generate_gif_thumbnail(video_file, duration):
     else:
         # Generate a 9-second GIF from 3 clips
         clip_duration = 3
-        start_time = 1  # Start of first clip
-        mid_time = (duration / 2) - (clip_duration / 2)  # Start of second clip
-        end_time = duration - clip_duration - 1  # Start of third clip
+        start_time = 1
+        mid_time = (duration / 2) - (clip_duration / 2)
+        end_time = duration - clip_duration - 1
         
         filter_complex = (
-            f"[0:v]trim=start={start_time}:end={start_time + clip_duration},setpts=PTS-STARTPTS[v0];"
-            f"[0:v]trim=start={mid_time}:end={mid_time + clip_duration},setpts=PTS-STARTPTS[v1];"
-            f"[0:v]trim=start={end_time}:end={end_time + clip_duration},setpts=PTS-STARTPTS[v2];"
-            f"[v0][v1][v2]concat=n=3:v=1:a=0,fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
-            "[s0]palettegen[p];[s1][p]paletteuse"
+            f"[0:v]trim=start={start_time}:duration={clip_duration},setpts=PTS-STARTPTS[v0];"
+            f"[0:v]trim=start={mid_time}:duration={clip_duration},setpts=PTS-STARTPTS[v1];"
+            f"[0:v]trim=start={end_time}:duration={clip_duration},setpts=PTS-STARTPTS[v2];"
+            f"[v0][v1][v2]concat=n=3:v=1:a=0[v];"
+            f"[v]fps=15,scale=600:-1:flags=lanczos,split[s0][s1];"
+            f"[s0]palettegen[p];[s1][p]paletteuse"
         )
         
         cmd = [
@@ -364,7 +368,7 @@ async def generate_gif_thumbnail(video_file, duration):
         ]
 
     try:
-        _, err, code = await wait_for(cmd_exec(cmd), timeout=120)  # Increased timeout for longer processing
+        _, err, code = await wait_for(cmd_exec(cmd), timeout=120)
         if code != 0 or not await aiopath.exists(output):
             LOGGER.error(
                 f"Error while generating GIF thumbnail. Name: {video_file} stderr: {err}"
