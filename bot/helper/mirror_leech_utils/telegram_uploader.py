@@ -275,27 +275,21 @@ class TelegramUploader:
                             f"File '{file_}' already exists in DB. Proceeding with imgbb upload."
                         )
                         if 'poster_delete_url' in existing:
-                            delete_url = existing['poster_delete_url']
+                            poster_url = existing['poster_delete_url']
                             async with aiohttp.ClientSession() as session:
-                                async with session.get(delete_url) as resp:
+                                async with session.get(poster_url) as resp:
                                     if resp.status == 200:
                                         content = await resp.text()
                                         match = re.search(r'auth_token="([^"]+)"', content)
                                         if match:
                                             auth_token = match.group(1)
-                                            data = {
-                                                "auth_token": auth_token,
-                                                "delete": "true"
-                                            }
-                                            async with session.post(delete_url, data=data) as post_resp:
-                                                if post_resp.status == 200:
-                                                    LOGGER.info(f"Successfully deleted old imgbb image: {delete_url}")
+                                            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                                            data = {'auth_token': auth_token, 'confirmation': 'delete', 'action': 'delete'}
+                                            async with session.post(poster_url, headers=headers, data=data) as resp:
+                                                if resp.status == 200:
+                                                    LOGGER.info(f"ImgBB poster deleted from link: {poster_url}")
                                                 else:
-                                                    LOGGER.error(f"Failed to confirm deletion for old imgbb image: {delete_url} with status: {post_resp.status}")
-                                        else:
-                                            LOGGER.error(f"Failed to find auth_token for old imgbb image: {delete_url}")
-                                    else:
-                                        LOGGER.error(f"Failed to fetch deletion page for old imgbb image: {delete_url} with status: {resp.status}")
+                                                    LOGGER.error(f"Failed to delete ImgBB poster: {resp.status}")
                         if self._listener.user_dict.get("GENERATE_GIF"):
                             imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
                         else:
