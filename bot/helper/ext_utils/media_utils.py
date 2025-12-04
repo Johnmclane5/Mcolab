@@ -338,8 +338,8 @@ async def generate_gif_thumbnail(video_file, duration):
             output,
         ]
     else:
-        # Generate a 9-second GIF from 3 clips
-        clip_duration = 3
+        # Generate a 6-second GIF from 3 clips
+        clip_duration = 2
         zone_size = duration / 3
         start_time = random.uniform(30, zone_size - clip_duration)
         mid_time = random.uniform(zone_size, (2 * zone_size) - clip_duration)
