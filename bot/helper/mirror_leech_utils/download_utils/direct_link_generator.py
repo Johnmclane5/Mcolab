@@ -69,7 +69,7 @@ def direct_link_generator(link):
         return uploadee(link)
     elif "gofile.io" in domain:
         return gofile(link)
-    elif "send.cm" in domain:
+    elif "send.now" in domain:
         return send_cm(link)
     elif "tmpsend.com" in domain:
         return tmpsend(link)
@@ -1398,7 +1398,7 @@ def send_cm(url):
         "contents": [],
         "title": "",
         "total_size": 0,
-        "header": "Referer: https://send.cm/",
+        "header": "Referer: https://send.now/",
     }
     if len(splitted_url) == 5:
         url += "/"
