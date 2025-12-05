@@ -1375,9 +1375,9 @@ def send_cm_file(url, file_id=None):
             data = {"op": "download2", "id": file_id}
             if _password and _passwordNeed:
                 data["password"] = _password
-            _res = session.post("https://send.cm/", data=data, allow_redirects=False)
+            _res = session.post("https://send.now/", data=data, allow_redirects=False)
             if "Location" in _res.headers:
-                return (_res.headers["Location"], ["Referer: https://send.cm/"])
+                return (_res.headers["Location"], ["Referer: https://send.now/"])
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
         if _passwordNeed:
