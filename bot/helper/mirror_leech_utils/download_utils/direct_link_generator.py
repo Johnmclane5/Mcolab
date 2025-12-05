@@ -1425,7 +1425,7 @@ def send_cm(url):
     def __getFile_link(file_id):
         try:
             _res = session.post(
-                "https://send.cm/",
+                "https://send.now/",
                 data={"op": "download2", "id": file_id},
                 allow_redirects=False,
             )
