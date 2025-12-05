@@ -598,7 +598,7 @@ class TelegramUploader:
                 screenshot = await imgbb_client.upload(
                     file=imgbb_thumb, name=f"{message_id}"
                 )
-                ss_url = screenshot.url
+                ss_url = screenshot.medium.url
                 ss_del_url = screenshot.delete_url
                 await imgbb_client.close()
                 if isinstance(cpy_msg, dict):
