@@ -332,7 +332,7 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-vf",
-            "fps=8,scale=360:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
+            "fps=8,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
             "0",
             output,
@@ -343,19 +343,13 @@ async def generate_gif_thumbnail(video_file, duration):
         zone_size = duration / 3
         start_time = random.uniform(30, zone_size - clip_duration)
         mid_time = random.uniform(zone_size, (2 * zone_size) - clip_duration)
-        end_time = random.uniform((2 * zone_size), duration - clip_duration - 30)
+        end_time = random.uniform((2 * zone_size), duration - clip_duration - 20)
         
         cmd = [
             "ffmpeg",
             "-hide_banner",
             "-loglevel",
             "error",
-            "-ss",
-            f"{start_time}",
-            "-t",
-            f"{clip_duration}",
-            "-i",
-            video_file,
             "-ss",
             f"{mid_time}",
             "-t",
@@ -369,10 +363,9 @@ async def generate_gif_thumbnail(video_file, duration):
             "-i",
             video_file,
             "-filter_complex",
-            "[0:v]fps=8,scale=360:-1:flags=lanczos[v0];"
-            "[1:v]fps=8,scale=360:-1:flags=lanczos[v1];"
-            "[2:v]fps=8,scale=360:-1:flags=lanczos[v2];"
-            "[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
+            "[0:v]fps=8,scale=360:-1:flags=lanczos[v1];"
+            "[1:v]fps=8,scale=360:-1:flags=lanczos[v2];"
+            "[v0][v1]concat=n=2:v=1:a=0,split[s0][s1];"
             "[s0]palettegen[p];[s1][p]paletteuse",
             "-loop",
             "0",
