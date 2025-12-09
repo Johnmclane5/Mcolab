@@ -42,7 +42,6 @@ from ..ext_utils.media_utils import (
     get_video_thumbnail,
     get_audio_thumbnail,
     get_multiple_frames_thumbnail,
-    generate_gif_thumbnail,
 )
 from ..ext_utils.extras import remove_extension, remove_redandent, get_movie_poster, get_tv_poster, extract_file_info
 from motor.motor_asyncio import AsyncIOMotorClient 
@@ -280,8 +279,12 @@ class TelegramUploader:
                                 f"An old ImgBB poster for this file was found. Please delete it manually: {poster_url}",
                                 disable_web_page_preview=True,
                             )
-                        if self._listener.user_dict.get("GENERATE_GIF"):
-                            imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
+                        if self._listener.user_dict.get("USE_MULTIFRAME_THUMB") and self._listener.thumbnail_layout:
+                            imgbb_thumb = await get_multiple_frames_thumbnail(
+                                self._up_path,
+                                self._listener.thumbnail_layout,
+                                self._listener.screen_shots,
+                            )
                         else:
                             imgbb_thumb = await get_video_thumbnail(self._up_path, None)
                         await self._upload_to_imgbb(imgbb_thumb, file_, existing)
@@ -397,8 +400,12 @@ class TelegramUploader:
             tmdb_poster_url = None
 
             if db and is_video:
-                if self._listener.user_dict.get("GENERATE_GIF"):
-                    imgbb_thumb = await generate_gif_thumbnail(self._up_path, None)
+                if self._listener.user_dict.get("USE_MULTIFRAME_THUMB") and self._listener.thumbnail_layout:
+                    imgbb_thumb = await get_multiple_frames_thumbnail(
+                        self._up_path,
+                        self._listener.thumbnail_layout,
+                        self._listener.screen_shots,
+                    )
                 else:
                     imgbb_thumb = await get_video_thumbnail(self._up_path, None)
 

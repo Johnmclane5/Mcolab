@@ -176,16 +176,16 @@ async def get_user_settings(from_user, stype="main"):
         else:
             thumb_layout = "None"
 
-        if user_dict.get("GENERATE_GIF", False):
+        if user_dict.get("USE_MULTIFRAME_THUMB", False):
             buttons.data_button(
-                "Disable GIF Thumbnail", f"userset {user_id} tog GENERATE_GIF f"
+                "Disable Multi-Frame Thumb", f"userset {user_id} tog USE_MULTIFRAME_THUMB f"
             )
-            gif_thumb = "Enabled"
+            mf_thumb = "Enabled"
         else:
             buttons.data_button(
-                "Enable GIF Thumbnail", f"userset {user_id} tog GENERATE_GIF t"
+                "Enable Multi-Frame Thumb", f"userset {user_id} tog USE_MULTIFRAME_THUMB t"
             )
-            gif_thumb = "Disabled"
+            mf_thumb = "Disabled"
 
         buttons.data_button("Back", f"userset {user_id} back")
         buttons.data_button("Close", f"userset {user_id} close")
@@ -203,7 +203,7 @@ Active dump <code>{adump}</code>
 Leech by <b>{leech_method}</b> session
 HYBRID Leech is <b>{hybrid_leech}</b>
 Thumbnail Layout is <b>{thumb_layout}</b>
-GIF Thumbnail is <b>{gif_thumb}</b>
+Multi-Frame Thumb is <b>{mf_thumb}</b>
 """
     elif stype == "rclone":
         buttons.data_button("Rclone Config", f"userset {user_id} menu RCLONE_CONFIG")
