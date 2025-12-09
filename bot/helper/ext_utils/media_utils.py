@@ -301,6 +301,7 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
             await rmtree(dirpath, ignore_errors=True)
     return output
 
+
 async def generate_gif_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
@@ -311,56 +312,61 @@ async def generate_gif_thumbnail(video_file, duration):
     if duration == 0:
         duration = 3
 
-    # --- unified GIF filter (safe + small <1MB) ---
-    palette_filter = (
-        "fps=6,scale=600:-1:flags=lanczos"
+    # --- Final stable GIF filter (no errors) ---
+    gif_filter = (
+        "fps=6,scale=600:-1:flags=lanczos,split[s0][s1];"
+        "[s0]palettegen=stats_mode=single:max_colors=64[p];"
+        "[s1][p]paletteuse=dither=floyd_steinberg"
     )
 
-    # Short video case
     if duration < 25:
-        ss_time = max(0, duration * 0.2)
+        # Short video: 3-second GIF
+        gif_duration = 3
+        if duration * 0.8 >= gif_duration:
+            ss_time = random.uniform(duration * 0.2, duration - gif_duration)
+        else:
+            ss_time = 0
+
         cmd = [
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "error",
             "-ss", f"{ss_time}",
-            "-t", "2",
+            "-t", "3",
             "-i", video_file,
-            "-vf",
-            f"{palette_filter},split[s0][s1];"
-            f"[s0]palettegen=stats_mode=single:max_colors=64[p];"
-            f"[s1][p]paletteuse=dither=floyd_steinberg",
+            "-vf", gif_filter,
             "-loop", "0",
             output,
         ]
 
     else:
-        # 3 PART GIF (each 0.3 seconds)
-        clip_duration = 0.3
-        zone = duration / 4
+        # Long video: pick 2 clips
+        clip_duration = 1
+        zone_size = duration / 3
 
-        # 3 sampling zones
-        t1 = random.uniform(15, max(16, zone - clip_duration))
-        t2 = random.uniform(zone, max(zone + 1, (2 * zone) - clip_duration))
-        t3 = random.uniform((2 * zone), max((2 * zone) + 1, (3 * zone) - clip_duration))
+        start_time = random.uniform(30, max(31, zone_size - clip_duration))
+        mid_time = random.uniform(zone_size, max(zone_size + 1, (2 * zone_size) - clip_duration))
+        end_time = random.uniform((2 * zone_size), max((2 * zone_size) + 1, duration - clip_duration - 20))
+
+        concat_filter = (
+            "[0:v]fps=6,scale=600:-1:flags=lanczos[v0];"
+            "[1:v]fps=6,scale=600:-1:flags=lanczos[v1];"
+            "[v0][v1]concat=n=2:v=1:a=0,split[s0][s1];"
+            "[s0]palettegen=stats_mode=single:max_colors=64[p];"
+            "[s1][p]paletteuse=dither=floyd_steinberg"
+        )
 
         cmd = [
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "error",
-
-            "-ss", f"{t1}", "-t", f"{clip_duration}", "-i", video_file,
-            "-ss", f"{t2}", "-t", f"{clip_duration}", "-i", video_file,
-            "-ss", f"{t3}", "-t", f"{clip_duration}", "-i", video_file,
-
-            "-filter_complex",
-            f"[0:v]{palette_filter}[v0];"
-            f"[1:v]{palette_filter}[v1];"
-            f"[2:v]{palette_filter}[v2];"
-            f"[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
-            f"[s0]palettegen=stats_mode=single:max_colors=64[p];"
-            f"[s1][p]paletteuse=dither=floyd_steinberg",
-
+            "-ss", f"{mid_time}",
+            "-t", f"{clip_duration}",
+            "-i", video_file,
+            "-ss", f"{end_time}",
+            "-t", f"{clip_duration}",
+            "-i", video_file,
+            "-filter_complex", concat_filter,
             "-loop", "0",
             output,
         ]
