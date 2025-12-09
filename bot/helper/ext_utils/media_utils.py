@@ -1,6 +1,5 @@
 
 import os
-import re
 import random
 from PIL import Image
 from aiofiles.os import remove, path as aiopath, makedirs
@@ -302,39 +301,6 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
             await rmtree(dirpath, ignore_errors=True)
     return output
 
-async def detect_scenes(video_file):
-    """
-    Uses FFmpeg scene detection to extract scene-change timestamps.
-    """
-    cmd = [
-        "ffmpeg",
-        "-hide_banner",
-        "-loglevel", "info",
-        "-i", video_file,
-        "-vf", "select='gt(scene,0.3)',showinfo",
-        "-f", "null",
-        "-"
-    ]
-
-    out, err, code = await cmd_exec(cmd)
-
-    if code != 0:
-        return []
-
-    # Extract timestamps from FFmpeg showinfo logs
-    timestamps = []
-    matches = re.findall(r"pts_time:([\d\.]+)", err)
-    for t in matches:
-        try:
-            timestamps.append(float(t))
-        except:
-            pass
-
-    # Remove duplicates, sort
-    timestamps = sorted(list(set(timestamps)))
-    return timestamps
-
-
 async def generate_gif_thumbnail(video_file, duration):
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
@@ -342,57 +308,62 @@ async def generate_gif_thumbnail(video_file, duration):
 
     if duration is None:
         duration = (await get_media_info(video_file))[0]
-    if duration <= 0:
+    if duration == 0:
         duration = 3
 
-    # ---- Detect scenes ----
-    scenes = await detect_scenes(video_file)
+    # --- unified GIF filter (safe + small <1MB) ---
+    palette_filter = (
+        "fps=6,scale=600:-1:flags=lanczos"
+    )
 
-    # If not enough scenes, fallback to random
-    if len(scenes) < 3:
-        scenes = [
-            random.uniform(duration * 0.1, duration * 0.3),
-            random.uniform(duration * 0.3, duration * 0.6),
-            random.uniform(duration * 0.6, duration * 0.9),
+    # Short video case
+    if duration < 25:
+        ss_time = max(0, duration * 0.2)
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-ss", f"{ss_time}",
+            "-t", "2",
+            "-i", video_file,
+            "-vf",
+            f"{palette_filter},split[s0][s1];"
+            f"[s0]palettegen=stats_mode=single:max_colors=64[p];"
+            f"[s1][p]paletteuse=dither=floyd_steinberg",
+            "-loop", "0",
+            output,
         ]
 
-    # Pick 3 timestamps evenly distributed
-    if len(scenes) >= 3:
-        # spread scenes: first, middle, last
-        t1 = scenes[0]
-        t2 = scenes[len(scenes) // 2]
-        t3 = scenes[-1]
     else:
-        # fallback
-        t1, t2, t3 = scenes[:3]
+        # 3 PART GIF (each 0.3 seconds)
+        clip_duration = 0.3
+        zone = duration / 4
 
-    # Clip duration
-    clip_duration = 0.3
+        # 3 sampling zones
+        t1 = random.uniform(15, max(16, zone - clip_duration))
+        t2 = random.uniform(zone, max(zone + 1, (2 * zone) - clip_duration))
+        t3 = random.uniform((2 * zone), max((2 * zone) + 1, (3 * zone) - clip_duration))
 
-    # Base GIF filter
-    palette_filter = "fps=6,scale=600:-1:flags=lanczos"
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
 
-    # Build ffmpeg command
-    cmd = [
-        "ffmpeg",
-        "-hide_banner",
-        "-loglevel", "error",
+            "-ss", f"{t1}", "-t", f"{clip_duration}", "-i", video_file,
+            "-ss", f"{t2}", "-t", f"{clip_duration}", "-i", video_file,
+            "-ss", f"{t3}", "-t", f"{clip_duration}", "-i", video_file,
 
-        "-ss", f"{t1}", "-t", f"{clip_duration}", "-i", video_file,
-        "-ss", f"{t2}", "-t", f"{clip_duration}", "-i", video_file,
-        "-ss", f"{t3}", "-t", f"{clip_duration}", "-i", video_file,
+            "-filter_complex",
+            f"[0:v]{palette_filter}[v0];"
+            f"[1:v]{palette_filter}[v1];"
+            f"[2:v]{palette_filter}[v2];"
+            f"[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
+            f"[s0]palettegen=stats_mode=single:max_colors=64[p];"
+            f"[s1][p]paletteuse=dither=floyd_steinberg",
 
-        "-filter_complex",
-        f"[0:v]{palette_filter}[v0];"
-        f"[1:v]{palette_filter}[v1];"
-        f"[2:v]{palette_filter}[v2];"
-        f"[v0][v1][v2]concat=n=3:v=1:a=0,split[s0][s1];"
-        f"[s0]palettegen=stats_mode=single:max_colors=64[p];"
-        f"[s1][p]paletteuse=dither=floyd_steinberg",
-
-        "-loop", "0",
-        output,
-    ]
+            "-loop", "0",
+            output,
+        ]
 
     try:
         _, err, code = await wait_for(cmd_exec(cmd), timeout=120)
@@ -403,7 +374,9 @@ async def generate_gif_thumbnail(video_file, duration):
             return None
 
     except Exception as e:
-        LOGGER.error(f"Error while generating GIF thumbnail: {e}. Path: {video_file}")
+        LOGGER.error(
+            f"Error while generating GIF thumbnail: {e}. Path: {video_file}"
+        )
         return None
 
     return output
