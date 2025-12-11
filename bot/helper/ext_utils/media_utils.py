@@ -127,7 +127,7 @@ async def take_ss(video_file, ss_nb) -> bool:
         cmds = []
         for i in range(ss_nb):
             output = f"{dirpath}/SS.{name}_{i:02}.png"
-            hms_time = strftime("%H:%M:%S", gmtime(cap_time))
+            hms_time = strftime("%H\\:%M\\:%S", gmtime(cap_time))
             cmd = [
                 "ffmpeg",
                 "-hide_banner",
