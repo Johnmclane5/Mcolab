@@ -138,7 +138,7 @@ async def take_ss(video_file, ss_nb) -> bool:
                 "-i",
                 video_file,
                 "-vf",
-                f"drawtext=text='{hms_time}':x=10:y=10:fontsize=20:fontcolor=white:box=1:boxcolor=black@0.5",
+                f"drawtext=text='{hms_time}':x=10:y=10:fontsize=30:fontcolor=white:box=1:boxcolor=black@0.5",
                 "-q:v",
                 "1",
                 "-frames:v",
