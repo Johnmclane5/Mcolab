@@ -178,12 +178,12 @@ async def get_user_settings(from_user, stype="main"):
 
         if user_dict.get("IMGBB_UPLOAD", False):
             buttons.data_button(
-                "Disable Multi-Frame Thumb", f"userset {user_id} tog IMGBB_UPLOAD f"
+                "Disable IMGBB_UPLOAD", f"userset {user_id} tog IMGBB_UPLOAD f"
             )
             mf_thumb = "Enabled"
         else:
             buttons.data_button(
-                "Enable Multi-Frame Thumb", f"userset {user_id} tog IMGBB_UPLOAD t"
+                "Enable IMGBB_UPLOAD", f"userset {user_id} tog IMGBB_UPLOAD t"
             )
             mf_thumb = "Disabled"
 
