@@ -207,17 +207,7 @@ async def get_video_thumbnail(video_file, duration):
     if duration == 0:
         duration = 3
 
-    max_duration = min(duration, 60)
-
-    # Select a random frame after 10 seconds, within the first 25% of the video
-    end_time = max_duration * 0.25
-    start_time = 10
-
-    if end_time <= start_time:
-        # Video too short: fallback to midpoint
-        ss_time = min(max_duration / 2, max_duration - 1)
-    else:
-        ss_time = random.uniform(start_time, end_time)
+    duration = duration // 2
 
     cmd = [
         "ffmpeg",
@@ -225,7 +215,7 @@ async def get_video_thumbnail(video_file, duration):
         "-loglevel",
         "error",
         "-ss",
-        f"{ss_time}",
+        f"{duration}",
         "-i",
         video_file,
         "-vf",
