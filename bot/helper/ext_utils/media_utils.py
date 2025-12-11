@@ -212,20 +212,12 @@ async def get_video_thumbnail(video_file, duration):
     cmd = [
         "ffmpeg",
         "-hide_banner",
-        "-loglevel",
-        "error",
-        "-ss",
-        f"{duration}",
-        "-i",
-        video_file,
-        "-vf",
-        "thumbnail",
-        "-q:v",
-        "1",
-        "-frames:v",
-        "1",
-        "-threads",
-        f"{max(1, cpu_no // 2)}",
+        "-loglevel", "error",
+        "-ss", f"{duration}",  # seek before input for sharper grabbing
+        "-i", video_file,
+        "-q:v", "1",           # best quality
+        "-frames:v", "1",
+        "-threads", f"{max(1, cpu_no // 2)}",
         output,
     ]
 
