@@ -279,7 +279,7 @@ class TelegramUploader:
                                 f"An old ImgBB poster for this file was found. Please delete it manually: {poster_url}",
                                 disable_web_page_preview=True,
                             )
-                        if self._listener.user_dict.get("USE_MULTIFRAME_THUMB") and self._listener.thumbnail_layout:
+                        if self._listener.user_dict.get("IMGBB_UPLOAD") and self._listener.thumbnail_layout:
                             imgbb_thumb = await get_multiple_frames_thumbnail(
                                 self._up_path,
                                 self._listener.thumbnail_layout,
@@ -400,7 +400,7 @@ class TelegramUploader:
             tmdb_poster_url = None
 
             if db and is_video:
-                if self._listener.user_dict.get("USE_MULTIFRAME_THUMB") and self._listener.thumbnail_layout:
+                if self._listener.user_dict.get("IMGBB_UPLOAD") and self._listener.thumbnail_layout:
                     imgbb_thumb = await get_multiple_frames_thumbnail(
                         self._up_path,
                         self._listener.thumbnail_layout,
