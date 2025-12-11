@@ -12,7 +12,7 @@ from asyncio import (
 from asyncio.subprocess import PIPE
 from os import path as ospath
 from re import search as re_search, escape
-from time import time
+from time import gmtime, strftime, time
 from aioshutil import rmtree
 
 from ... import LOGGER, cpu_no, DOWNLOAD_DIR
@@ -127,17 +127,18 @@ async def take_ss(video_file, ss_nb) -> bool:
         cmds = []
         for i in range(ss_nb):
             output = f"{dirpath}/SS.{name}_{i:02}.png"
+            hms_time = strftime("%H:%M:%S", gmtime(cap_time))
             cmd = [
                 "ffmpeg",
                 "-hide_banner",
                 "-loglevel",
                 "error",
-                "-i",
-                video_file,
                 "-ss",
                 f"{cap_time}",
+                "-i",
+                video_file,
                 "-vf",
-                "drawtext=text='%{pts:hms}':x=w-text_w-10:y=h-text_h-10:fontsize=20:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2",
+                f"drawtext=text='{hms_time}':x=w-text_w-10:y=h-text_h-10:fontsize=20:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2",
                 "-q:v",
                 "1",
                 "-frames:v",
@@ -217,7 +218,7 @@ async def get_video_thumbnail(video_file, duration):
         "-loglevel", "error",
         "-ss", f"{duration}",
         "-i", video_file,
-        "-vf", "thumbnail",
+        "-vf", "thumbnail=10",
         "-q:v", "1",
         "-frames:v", "1",
         "-threads", f"{max(1, cpu_no // 2)}",
