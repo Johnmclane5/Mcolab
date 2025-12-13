@@ -3,7 +3,7 @@ from aiofiles.os import path as aiopath
 from base64 import b64encode
 from re import match as re_match
 
-from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
+from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR, user_data
 from ..helper.ext_utils.bot_utils import (
     get_content_type,
     sync_to_async,
@@ -100,6 +100,7 @@ class Mirror(TaskListener):
             "-n": "",
             "-m": "",
             "-up": "",
+            "-ud": "",
             "-rcf": "",
             "-au": "",
             "-ap": "",
@@ -118,6 +119,7 @@ class Mirror(TaskListener):
         self.seed = args["-d"]
         self.name = args["-n"]
         self.up_dest = args["-up"]
+        self.user_dump = args["-ud"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
         self.compress = args["-z"]
@@ -309,6 +311,20 @@ class Mirror(TaskListener):
 
         if len(self.link) > 0:
             LOGGER.info(self.link)
+
+        if self.user_dump and self.up_dest:
+            return await send_message(self.message, "Cannot use both -up and -ud")
+        elif self.user_dump:
+            uid = self.message.from_user.id
+            user_dict = user_data.get(uid, {})
+            dump_dict = user_dict.get("USER_DUMP", {})
+            if dump_dict and self.user_dump in dump_dict:
+                self.up_dest = dump_dict[self.user_dump]
+            else:
+                return await send_message(
+                    self.message,
+                    f"Invalid dump name: {self.user_dump}. Please check your USER_DUMP settings.",
+                )
 
         try:
             await self.before_start()
