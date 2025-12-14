@@ -115,7 +115,10 @@ class TelegramUploader:
             if "LEECH_FILENAME_PREFIX" not in self._listener.user_dict
             else ""
         )
-        self._user_dump = self._listener.user_dict.get("ACTIVE_USER_DUMP")
+        if self._listener.user_dump:
+            self._user_dump = self._listener.user_dict.get("USER_DUMP", {}).get(self._listener.user_dump)
+        else:
+            self._user_dump = self._listener.user_dict.get("ACTIVE_USER_DUMP")
         if self._thumb != "none" and not await aiopath.exists(self._thumb):
             self._thumb = None
 

@@ -318,9 +318,7 @@ class Mirror(TaskListener):
             uid = self.message.from_user.id
             user_dict = user_data.get(uid, {})
             dump_dict = user_dict.get("USER_DUMP", {})
-            if dump_dict and self.user_dump in dump_dict:
-                self.up_dest = dump_dict[self.user_dump]
-            else:
+            if not (dump_dict and self.user_dump in dump_dict):
                 return await send_message(
                     self.message,
                     f"Invalid dump name: {self.user_dump}. Please check your USER_DUMP settings.",
